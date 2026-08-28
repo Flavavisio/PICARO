@@ -1832,12 +1832,12 @@ body:not(.access-addon-enabled) #hik-advanced-health-panel{
   <div class="login-panel">
     <div class="login-card">
       <h2>Portal do Parceiro</h2>
-      <p class="sub">Aceda com o seu email ou utilize a demonstração.</p>
+      <p class="sub">Aceda com o seu email e palavra-passe.</p>
 
       <form id="credential-form">
         <div class="field">
-          <label>Email ou utilizador</label>
-          <input type="text" id="email-input" placeholder="Email ou demopicaaqui" autocomplete="username" required>
+          <label>Email</label>
+          <input type="text" id="email-input" placeholder="O seu email de acesso" autocomplete="username" required>
         </div>
         <div class="field">
           <label>Palavra-passe</label>
@@ -1848,15 +1848,7 @@ body:not(.access-addon-enabled) #hik-advanced-health-panel{
         </div>
         <button type="submit" class="btn-primary" id="login-submit-btn">Entrar</button>
       </form>
-
-
-      <div class="hint-chip" id="public-demo-hint" style="margin-top:14px;display:block;">
-        <strong>Demo Hospital</strong><br>
-        Utilizador: <code>demopicaaqui</code> · Palavra-passe: <code>demo</code><br>
-        <span style="font-size:11px;">Dados fictícios. As alterações da demo são reiniciadas ao voltar a entrar.</span>
-      </div>
-
-      <div class="login-divider"><span>ou</span></div>
+<div class="login-divider"><span>ou</span></div>
       <button class="btn-outline" id="public-kiosk-btn" style="width:100%;">🖥 Aceder ao Quiosque</button>
     </div>
   </div>
@@ -2586,12 +2578,7 @@ body:not(.access-addon-enabled) #hik-advanced-health-panel{
 
 <!-- ================= ADMIN DA INSTITUIÇÃO DASHBOARD ================= -->
 <div id="admin-dashboard-screen" hidden>
-
-<div id="pica-demo-banner" hidden style="position:sticky;top:0;z-index:80;background:#FFF4D6;border-bottom:1px solid #E8C66B;padding:8px 18px;font-size:12px;color:#6F5311;">
-  <strong>DEMONSTRAÇÃO · Hospital Santa Aurora</strong> — todos os dados são fictícios e as alterações são temporárias.
-</div>
-
-  <div class="sidebar-overlay" id="admin-sidebar-overlay"></div>
+<div class="sidebar-overlay" id="admin-sidebar-overlay"></div>
   <aside class="sidebar" id="admin-sidebar">
     <div class="brand"><div class="brand-mark"></div>Pica-Aqui</div>
     <div class="inst-context">
@@ -10365,12 +10352,10 @@ async function enterHospitalDemo(){
   document.getElementById('license-blocked-screen').hidden=true;
   document.getElementById('admin-dashboard-screen').hidden=false;
 
-  const demoBanner=document.getElementById('pica-demo-banner');
-  if(demoBanner) demoBanner.hidden=false;
   const inst=document.getElementById('admin-inst-name');
-  if(inst) inst.textContent='Hospital Santa Aurora';
+  if(inst) inst.textContent='Hospital Demo';
   const plan=document.getElementById('admin-inst-plan');
-  if(plan) plan.textContent='Plano Demo · 12 colaboradores';
+  if(plan) plan.textContent='Plano Demo';
 
   try{
     document.getElementById('colab-filter-team').value='';
@@ -10387,7 +10372,7 @@ async function enterHospitalDemo(){
   try{ await renderFerias(); }catch(_){}
   try{ await renderFaltas(); }catch(_){}
 
-  showToast('Demo Hospital carregada — 3 equipas · 12 colaboradores.');
+  showToast('Hospital Demo carregado.');
   maybeStartTour?.();
 }
 
