@@ -1672,8 +1672,41 @@ button.is-loading::after{
 }
 </style>
 
+
+<style id="pica-feature-pack-20260828">
+#pica-install-btn{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:3500;border:0;border-radius:999px;padding:11px 16px;background:#0C332E;color:white;font-weight:700;box-shadow:0 10px 30px rgba(0,0,0,.18);cursor:pointer}
+#pica-install-btn[hidden]{display:none!important}
+#pica-offline-bar{position:fixed;left:50%;top:calc(10px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:5000;background:#8a5a00;color:#fff;border-radius:999px;padding:8px 13px;font-size:12px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.16)}
+#pica-offline-bar[hidden]{display:none!important}
+#pica-offline-panel{position:fixed;inset:0;z-index:4900;background:#f5f6f8;overflow:auto;padding:calc(68px + env(safe-area-inset-top,0px)) 18px 30px}
+#pica-offline-panel[hidden]{display:none!important}
+.pica-offline-wrap{max-width:900px;margin:auto}.pica-offline-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:18px}
+.pica-offline-card{background:white;border:1px solid #dde3e8;border-radius:14px;padding:14px;margin-bottom:12px}.pica-offline-list{display:grid;gap:8px}.pica-offline-row{padding:9px 0;border-bottom:1px solid #edf0f2}.pica-offline-row:last-child{border-bottom:0}
+.pica-hik-health{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin:12px 0}.pica-health-card{border:1px solid #dde3e8;border-radius:12px;padding:12px;background:#fff}.pica-health-card strong{display:block}.pica-health-ok{color:#157347}.pica-health-bad{color:#b42318}
+@media(max-width:600px){#pica-install-btn{right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px))}}
+</style>
+
+<style id="access-addon-visibility-gate">
+body:not(.access-addon-enabled) #nav-access-history,
+body:not(.access-addon-enabled) #settings-access-tab-btn,
+body:not(.access-addon-enabled) #settings-terminal-acessos,
+body:not(.access-addon-enabled) #hik-advanced-health-panel{
+  display:none !important;
+}
+</style>
 </head>
 <body>
+
+<div id="pica-offline-bar" hidden>Sem Internet · dados guardados disponíveis</div>
+<button id="pica-install-btn" type="button" hidden>Instalar Pica-Aqui</button>
+<div id="pica-offline-panel" hidden>
+  <div class="pica-offline-wrap">
+    <div class="pica-offline-head"><div><h2 style="margin:0">Pica-Aqui Offline</h2><small id="pica-offline-stamp">Última cópia local</small></div><button class="btn-secondary" id="pica-offline-close">Fechar</button></div>
+    <div class="pica-offline-card"><strong>Escala guardada</strong><div id="pica-offline-roster" class="pica-offline-list"></div></div>
+    <div class="pica-offline-card"><strong>Colaboradores</strong><div id="pica-offline-employees" class="pica-offline-list"></div></div>
+    <div class="pica-offline-card"><strong>Equipas e turnos</strong><div id="pica-offline-admin" class="pica-offline-list"></div></div>
+  </div>
+</div>
 
 <!-- ================= LOGIN SCREEN ================= -->
 <div id="login-screen">
@@ -1801,6 +1834,7 @@ button.is-loading::after{
     <button class="nav-item" data-nav="licencas"><span class="ic">◈</span>Licenças</button>
     <button class="nav-item" data-nav="admins"><span class="ic">◍</span>Administradores</button>
     <div class="nav-section-label">Sistema</div>
+    <button class="nav-item" data-nav="licencas-admin" id="nav-admin-licenses"><span class="ic">▣</span>Licenças</button>
     <button class="nav-item" data-nav="definicoes"><span class="ic">⚙</span>Definições</button>
     <div class="sidebar-footer">
       <div class="sa-badge">SUPER_ADMIN · sessão ativa</div>
@@ -2159,12 +2193,12 @@ button.is-loading::after{
         </div>
 
         
-        <section id="settings-licencas" hidden>
+        <section id="settings-licencas" class="page" hidden>
           <div class="panel" style="margin-bottom:16px;">
             <div class="panel-head">
               <div>
                 <h2 style="font-family:var(--font-display);font-size:22px;">Licenças</h2>
-                <div class="sub">Licença da instituição e serviços contratados</div>
+                <div class="sub">Licença da instituição, serviços contratados e add-ons disponíveis</div>
               </div>
               <span class="badge" id="admin-license-status">A carregar…</span>
             </div>
@@ -2191,13 +2225,14 @@ button.is-loading::after{
                       <label>Observação (opcional)</label>
                       <input type="text" id="admin-access-request-note" placeholder="Ex.: apenas equipa de armazém">
                     </div>
-                    <button type="button" class="btn-add" id="admin-access-request-btn" onclick="requestAccessAddonLicense()">Enviar pedido</button>
+                    <button type="button" class="btn-add" id="admin-access-request-btn" onclick="requestAccessAddonLicense()">Pedir emissão</button>
                   </div>
+                  <div id="admin-access-price-preview" class="hint-chip" style="margin-top:12px;">Indica o número de lugares para calcular o valor.</div>
                   <div id="admin-access-request-state" style="margin-top:12px;"></div>
                 </div>
               </div>
               <div class="hint-chip" style="margin-top:14px;">
-                O pedido não ativa o add-on. O Super Admin recebe-o, emite a licença e envia a cobrança correspondente.
+                O pedido não ativa o add-on. Recebes por email o valor a pagar. O Super Admin confirma a receção do pagamento e só depois ativa a licença.
               </div>
             </div>
           </div>
@@ -2566,7 +2601,7 @@ button.is-loading::after{
           <div class="panel-body" style="padding-top:16px;">
             <table>
               <thead>
-                <tr><th>Equipa</th><th>Colaboradores</th><th>Escalados hoje</th><th>Presentes hoje</th><th></th></tr>
+                <tr><th>Equipa</th><th>Colaboradores</th><th>Mínimo</th><th>Fim de semana</th><th>Escalados hoje</th><th>Presentes hoje</th><th></th></tr>
               </thead>
               <tbody id="team-table-body"></tbody>
             </table>
@@ -2650,7 +2685,7 @@ button.is-loading::after{
         </div>
         <div id="escala-coverage-alerts" style="margin-bottom:12px;"></div>
         <div class="hint-chip" style="margin-bottom:12px;">
-          <strong>Regras:</strong> férias/ausências aprovadas e sobreposição de turnos são bloqueadas. Descanso inferior a 11h, excesso de horas semanais e cobertura mínima geram aviso e exigem confirmação.
+          <strong>Regras:</strong> férias/ausências aprovadas, indisponibilidades e competências obrigatórias são respeitadas. Descanso inferior a 11h, excesso de horas semanais e cobertura mínima são validados automaticamente.
         </div>
         <div class="panel">
           <div class="panel-body" style="padding-top:16px; overflow-x:auto;">
@@ -2846,10 +2881,9 @@ button.is-loading::after{
           </div>
         </div>
         <div class="toolbar" style="margin-bottom:16px;">
-          <div class="filter-group settings-subnav" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <div class="filter-group settings-subnav" id="admin-settings-subnav" style="display:flex;gap:8px;flex-wrap:wrap;">
             <button type="button" class="btn-outline active" data-settings-tab="presencas">Presenças</button>
-            <button type="button" class="btn-outline" data-settings-tab="acessos">Terminal de Acessos</button>
-            <button type="button" class="btn-outline" data-settings-tab="licencas">Licenças</button>
+            <button type="button" class="btn-outline" data-settings-tab="acessos" id="settings-access-tab-btn" hidden>Terminal de Acessos</button>
           </div>
         </div>
 
@@ -3058,6 +3092,32 @@ button.is-loading::after{
         <div class="hint-chip" id="access-auto-sync-status" style="margin-bottom:16px;">
           Sincronização automática HIKVISION ativa.
         </div>
+
+        <div class="panel" id="hik-advanced-health-panel" style="margin-bottom:16px;">
+          <div class="panel-head">
+            <div>
+              <h3>Saúde e consistência dos terminais</h3>
+              <div class="sub">Compara o que está configurado no Pica-Aqui com o que existe realmente em cada HIKVISION.</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button type="button" class="btn-outline" id="hik-diagnostics-btn">Diagnóstico remoto</button>
+              <button type="button" class="btn-add" id="hik-compare-btn">Comparar configurações</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div id="hik-compare-summary" class="hint-chip">Ainda não foi executada uma comparação.</div>
+            <div style="overflow:auto;margin-top:12px;">
+              <table>
+                <thead><tr><th></th><th>Pessoa</th><th>Terminal</th><th>Estado</th><th>Diferenças</th><th>Última verificação</th></tr></thead>
+                <tbody id="hik-compare-body"><tr><td colspan="6" style="text-align:center;padding:18px;color:var(--ink-faint);">Sem comparação.</td></tr></tbody>
+              </table>
+            </div>
+            <div style="display:flex;justify-content:flex-end;margin-top:12px;">
+              <button type="button" class="btn-outline" id="hik-resync-selected-btn">Reenviar selecionados</button>
+            </div>
+          </div>
+        </div>
+
 
         <div class="panel" style="margin-bottom:16px;">
           <div class="panel-head">
@@ -3616,6 +3676,19 @@ button.is-loading::after{
       <label>Nome da equipa</label>
       <input type="text" id="tf-name" placeholder="Ex: Enfermagem" required>
     </div>
+    <div class="field">
+      <label>Mínimo de pessoas necessárias</label>
+      <input type="number" id="tf-min-staff" min="0" step="1" value="0">
+      <div class="hint">Ex.: 3 ou 5. O gerador tenta garantir pelo menos este número de pessoas desta equipa em cada dia em que a equipa trabalha.</div>
+    </div>
+    <div class="field">
+      <label>Dias de fim de semana</label>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:7px;"><input type="checkbox" id="tf-works-saturday" checked> Trabalha sábado</label>
+        <label style="display:flex;align-items:center;gap:7px;"><input type="checkbox" id="tf-works-sunday" checked> Trabalha domingo</label>
+      </div>
+      <div class="hint">Podes deixar ambos desligados para uma equipa que só trabalha de segunda a sexta.</div>
+    </div>
   </div>
   <div class="drawer-foot">
     <button class="btn-secondary" id="team-drawer-cancel-btn">Cancelar</button>
@@ -3691,12 +3764,46 @@ button.is-loading::after{
       </div>
     </div>
 
+
+    <div class="field">
+      <label>Fim de semana</label>
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;">
+        <label class="toggle-row" style="border:1px solid var(--border);border-radius:10px;padding:10px 12px;">
+          <span>Incluir sábado</span>
+          <input type="checkbox" id="rg-include-saturday" checked>
+          <span class="toggle-switch"></span>
+        </label>
+        <label class="toggle-row" style="border:1px solid var(--border);border-radius:10px;padding:10px 12px;">
+          <span>Incluir domingo</span>
+          <input type="checkbox" id="rg-include-sunday" checked>
+          <span class="toggle-switch"></span>
+        </label>
+      </div>
+      <div class="hint">A configuração de cada equipa tem prioridade. Ex.: podes incluir sábado globalmente e manter uma equipa apenas de segunda a sexta.</div>
+    </div>
+
     <div class="field">
       <label class="toggle-row">
         <span>Respeitar horas semanais do colaborador</span>
         <input type="checkbox" id="rg-respect-hours" checked>
         <span class="toggle-switch"></span>
       </label>
+    </div>
+
+
+    <div class="field">
+      <label>Distribuição justa</label>
+      <label class="toggle-row">
+        <span>Equilibrar fins de semana entre colaboradores</span>
+        <input type="checkbox" id="rg-balance-weekends" checked>
+        <span class="toggle-switch"></span>
+      </label>
+      <label class="toggle-row" style="margin-top:8px;">
+        <span>Equilibrar turnos noturnos</span>
+        <input type="checkbox" id="rg-balance-nights" checked>
+        <span class="toggle-switch"></span>
+      </label>
+      <div class="hint">O gerador consulta as 4 semanas anteriores e dá prioridade a quem fez menos fins de semana/noites.</div>
     </div>
 
     <div class="field">
@@ -3708,8 +3815,55 @@ button.is-loading::after{
       <div class="hint">Desligado: apenas preenche dias ainda vazios.</div>
     </div>
 
+
+    <details class="panel" id="rg-intelligence-panel" style="margin-top:14px;" open>
+      <summary style="cursor:pointer;font-weight:800;padding:12px 14px;">Regras inteligentes da escala</summary>
+      <div class="panel-body" style="padding-top:4px;">
+        <div class="hint-chip" style="margin-bottom:12px;">O gerador respeita o mínimo definido na criação de cada equipa, competências obrigatórias, indisponibilidades e distribuição justa.</div>
+
+        <div style="font-weight:800;margin:12px 0 8px;">Cobertura e dias de trabalho por equipa</div>
+        <div id="rg-team-min-list"></div>
+
+        <div style="font-weight:800;margin:16px 0 8px;">Competências dos colaboradores</div>
+        <div class="grid-2">
+          <div class="field"><label>Colaborador</label><select class="select-input" id="rg-skill-employee"></select></div>
+          <div class="field"><label>Competência</label><input id="rg-skill-name" placeholder="Ex.: Enfermeiro, Empilhador, Segurança"></div>
+        </div>
+        <div class="grid-2">
+          <div class="field"><label>Nível</label><input type="number" id="rg-skill-level" min="1" max="5" value="1"></div>
+          <div class="field" style="display:flex;align-items:flex-end;"><button class="btn-outline" type="button" id="rg-skill-save" style="width:100%;">Adicionar competência</button></div>
+        </div>
+        <div id="rg-skill-list"></div>
+
+        <div style="font-weight:800;margin:16px 0 8px;">Competências obrigatórias por turno</div>
+        <div class="grid-2">
+          <div class="field"><label>Turno</label><select class="select-input" id="rg-req-shift"></select></div>
+          <div class="field"><label>Competência</label><input id="rg-req-skill" placeholder="Ex.: Segurança"></div>
+        </div>
+        <div class="grid-2">
+          <div class="field"><label>Mínimo de pessoas</label><input type="number" id="rg-req-min-people" min="1" value="1"></div>
+          <div class="field"><label>Nível mínimo</label><input type="number" id="rg-req-min-level" min="1" max="5" value="1"></div>
+        </div>
+        <button class="btn-outline" type="button" id="rg-req-save">Adicionar requisito</button>
+        <div id="rg-req-list" style="margin-top:8px;"></div>
+
+        <div style="font-weight:800;margin:16px 0 8px;">Indisponibilidades</div>
+        <div class="grid-2">
+          <div class="field"><label>Colaborador</label><select class="select-input" id="rg-unav-employee"></select></div>
+          <div class="field"><label>Motivo</label><input id="rg-unav-reason" placeholder="Ex.: Formação, consulta, indisponível"></div>
+        </div>
+        <div class="grid-2">
+          <div class="field"><label>Início</label><input type="datetime-local" id="rg-unav-start"></div>
+          <div class="field"><label>Fim</label><input type="datetime-local" id="rg-unav-end"></div>
+        </div>
+        <button class="btn-outline" type="button" id="rg-unav-save">Adicionar indisponibilidade</button>
+        <div id="rg-unav-list" style="margin-top:8px;"></div>
+      </div>
+    </details>
+
     <div class="hint-chip">
-      O gerador não atribui turnos a colaboradores suspensos ou em férias aprovadas.
+      O gerador não atribui turnos a colaboradores suspensos, em férias aprovadas ou indisponíveis.
+      Sábado e domingo obedecem primeiro à opção do gerador e depois à regra de cada equipa.
       Turnos overnight contam integralmente para o dia em que começam.
     </div>
 
@@ -4016,6 +4170,21 @@ button.is-loading::after{
   </div>
 </div>
 
+
+
+<div class="notification-overlay" id="notification-overlay-live"></div>
+<aside id="notification-center-live" class="notification-center" aria-label="Centro de notificações" style="display:none;">
+  <div class="notification-head">
+    <div><h3>Notificações</h3><div class="sub" id="notification-center-live-sub">Centro de notificações e Push</div></div>
+    <button type="button" class="drawer-close" id="notification-live-close-btn">✕</button>
+  </div>
+  <div class="notification-actions" style="display:flex;gap:8px;flex-wrap:wrap;">
+    <button type="button" class="btn-add" id="push-enable-btn">Ativar notificações Push</button>
+    <button type="button" class="btn-outline" id="push-disable-btn">Desativar Push</button>
+  </div>
+  <div class="hint-chip" id="push-status-chip" style="margin:8px 0 12px;">Push ainda não configurado neste dispositivo.</div>
+  <div id="notification-list-live" class="notification-list"></div>
+</aside>
 
 <script>
 /* ============================================================================
@@ -5100,7 +5269,7 @@ async function renderLicencas(){
             .eq('addon_code','hikvision_access_control').in('institution_id',ids)
         : Promise.resolve({data:[],error:null}),
       supabaseClient.from('addon_license_requests')
-        .select('id,institution_id,requested_units,status,request_type,created_at,admin_note,previous_units,units_delta,effective_date')
+        .select('id,institution_id,requested_units,status,request_type,created_at,admin_note,previous_units,units_delta,effective_date,amount_cents,addon_amount_cents,billing_cycle,billing_scope,payment_requested_at,payment_confirmed_at')
         .eq('addon_code','hikvision_access_control')
         .order('created_at',{ascending:false}).limit(100)
     ]);
@@ -5108,10 +5277,22 @@ async function renderLicencas(){
     if(addonsRes.error) throw addonsRes.error;
     if(requestsRes.error) throw requestsRes.error;
 
-    pendingRequests=(requestsRes.data||[]).filter(r=>r.status==='pending');
+    pendingRequests=(requestsRes.data||[]).filter(r=>['pending','awaiting_payment','paid'].includes(r.status));
 
     pendingRequests=await Promise.all(
       pendingRequests.map(async r=>{
+        if(r.status==='awaiting_payment'||r.status==='paid'){
+          return {...r,preview:{
+            previous_units:r.previous_units,
+            requested_units:r.requested_units,
+            units_delta:r.units_delta,
+            addon_amount_cents:r.addon_amount_cents??r.amount_cents??0,
+            total_amount_cents:r.amount_cents??0,
+            billing_cycle:r.billing_cycle,
+            effective_date:r.effective_date,
+            currency:'EUR'
+          }};
+        }
         const {data,error}=await supabaseClient.rpc('preview_access_addon_request',{
           p_request_id:r.id,
           p_billing_scope:'addon_only'
@@ -5143,7 +5324,7 @@ async function renderLicencas(){
   const reqCount=document.getElementById('access-addon-request-count');
 
   if(reqCount){
-    reqCount.textContent=`${pendingRequests.length} pendente${pendingRequests.length===1?'':'s'}`;
+    reqCount.textContent=`${pendingRequests.length} em processamento`;
   }
 
   if(reqBody){
@@ -5158,9 +5339,9 @@ async function renderLicencas(){
       const details=delta>0
         ? `${Number(pv.previous_units||0)} → ${Number(pv.requested_units||r.requested_units)} · +${delta} lugar(es)`
         : `${Number(pv.previous_units||0)} → ${Number(pv.requested_units||r.requested_units)} · efetivo ${effective}`;
-      const priceText=delta>0
-        ? `${fmtLicenseMoney(amount,currency)}${pv.proration_days!=null?` <span style="font-size:11px;color:var(--ink-faint);">prorrata ${pv.proration_days}/${pv.period_days} dias</span>`:''}`
-        : `<span style="color:var(--ink-soft);">0,00 € agora</span>`;
+      const frozenAmount=Number(r.amount_cents??pv.total_amount_cents??amount??0);
+      const statusLabel=r.status==='awaiting_payment'?'A aguardar pagamento':r.status==='paid'?'Pagamento confirmado':'Pendente';
+      const priceText=`<strong>${fmtLicenseMoney(frozenAmount,currency)}</strong><div style="font-size:11px;color:var(--ink-faint);">${statusLabel}</div>`;
 
       return `<tr>
         <td><strong>${analyticsEsc(inst?.name||'Instituição')}</strong></td>
@@ -5170,9 +5351,12 @@ async function renderLicencas(){
         <td>${new Date(r.created_at).toLocaleDateString('pt-PT')}</td>
         <td>
           <div class="row-actions" style="flex-wrap:wrap;">
-            <button class="btn-toggle" onclick="issueAccessAddonRequest('${r.id}','addon_only',this)">Emitir só add-on</button>
-            <button class="btn-toggle" onclick="issueAccessAddonRequest('${r.id}','license_plus_addon',this)">Licença + add-on</button>
-            <button class="btn-toggle" onclick="rejectAccessAddonRequest('${r.id}',this)">Rejeitar</button>
+            ${r.status==='awaiting_payment'
+              ? `<button class="btn-toggle" onclick="confirmAccessAddonPayment('${r.id}',this)">Confirmar pagamento</button>`
+              : r.status==='paid'
+                ? `<button class="btn-toggle" onclick="issueAccessAddonRequest('${r.id}','addon_only',this)">Ativar licença</button>`
+                : `<button class="btn-toggle" disabled>Aguardando fluxo atualizado</button>`}
+            ${r.status!=='paid'?`<button class="btn-toggle" onclick="rejectAccessAddonRequest('${r.id}',this)">Rejeitar</button>`:''}
           </div>
         </td>
       </tr>`;
@@ -5185,7 +5369,7 @@ async function renderLicencas(){
 
   document.getElementById('lic-kpi-grid').innerHTML=`
     <div class="kpi-card"><div class="label">Licenças Ativas</div><div class="value">${activeCount}</div><div class="delta up">em vigor</div></div>
-    <div class="kpi-card"><div class="label">Pedidos Add-on</div><div class="value">${pendingRequests.length}</div><div class="delta ${pendingRequests.length?'down':'flat'}">por emitir</div></div>
+    <div class="kpi-card"><div class="label">Pedidos Add-on</div><div class="value">${pendingRequests.length}</div><div class="delta ${pendingRequests.length?'down':'flat'}">pagamento / ativação</div></div>
     <div class="kpi-card"><div class="label">Expiradas</div><div class="value">${expiredCount}</div><div class="delta ${expiredCount?'down':'flat'}">ação necessária</div></div>
     <div class="kpi-card"><div class="label">Em Demo</div><div class="value">${demoCount}</div><div class="delta flat">potencial conversão</div></div>`;
 
@@ -5219,6 +5403,35 @@ async function renderLicencas(){
   }).join('');
 }
 
+
+async function confirmAccessAddonPayment(requestId,button){
+  const note=prompt('Referência/observação do pagamento (opcional):')||null;
+  const old=button?.textContent||'Confirmar pagamento';
+  if(button){button.disabled=true;button.textContent='A confirmar…';}
+  try{
+    const {data,error}=await supabaseClient.rpc('confirm_access_addon_payment',{
+      p_request_id:requestId,
+      p_review_note:note
+    });
+    if(error) throw error;
+    if(!data?.ok) throw new Error(data?.error||'Não foi possível confirmar o pagamento.');
+
+    try{
+      await supabaseClient.functions.invoke('send-addon-license-status-email',{
+        body:{action:'payment_confirmed',request_id:requestId}
+      });
+    }catch(mailErr){console.warn('Pagamento confirmado, mas falhou email:',mailErr)}
+
+    showToast(`Pagamento confirmado: ${fmtLicenseMoney(data.amount_cents||0,'EUR')}. Agora podes ativar a licença.`);
+    await renderLicencas();
+  }catch(err){
+    console.error(err);
+    showToast('Erro ao confirmar pagamento: '+(err.message||''),true);
+  }finally{
+    if(button){button.disabled=false;button.textContent=old;}
+  }
+}
+
 async function issueAccessAddonRequest(requestId,billingScope,button){
   const old=button?.textContent||'Emitir';
 
@@ -5237,21 +5450,21 @@ async function issueAccessAddonRequest(requestId,billingScope,button){
     if(error) throw error;
     if(!data?.ok) throw new Error(data?.error||'Falha ao emitir licença.');
 
-    const emailRes=await supabaseClient.functions.invoke('send-license-payment-email',{
-      body:{
-        institution_id:data.institution_id,
-        billing_scope:billingScope,
-        request_id:requestId
-      }
-    });
-
-    if(emailRes.error) throw emailRes.error;
-    if(!emailRes.data?.ok) throw new Error(emailRes.data?.error||'A alteração foi emitida, mas não foi possível enviar o email.');
+    let activationEmailOk=true;
+    try{
+      const emailRes=await supabaseClient.functions.invoke('send-addon-license-status-email',{
+        body:{action:'activated',request_id:requestId}
+      });
+      if(emailRes.error||!emailRes.data?.ok) activationEmailOk=false;
+    }catch(mailErr){
+      console.warn('Licença ativada, mas falhou email:',mailErr);
+      activationEmailOk=false;
+    }
 
     if(Number(data.units_delta)<0){
       showToast(`Redução aprovada: ${data.previous_units} → ${data.requested_units} lugares a partir de ${new Date(data.effective_date+'T12:00:00').toLocaleDateString('pt-PT')}.`);
     }else{
-      showToast(`Add-on atualizado para ${data.requested_units} lugares. Cobrança prorrateada: ${fmtLicenseMoney(data.addon_amount_cents,data.currency)}.`);
+      showToast(`Add-on ativado para ${data.requested_units} lugares${activationEmailOk?' e Admin notificado por email.':'.'}`);
     }
 
     await renderLicencas();
@@ -6195,7 +6408,7 @@ async function loadSupaTeamMap(institutionId){
   try {
     const { data, error } = await supabaseClient
       .from('teams')
-      .select('id,name,description,color,min_staff_required')
+      .select('id,name,description,color,min_staff_required,works_saturday,works_sunday')
       .eq('institution_id', institutionId)
       .is('deleted_at', null)
       .order('name');
@@ -6209,6 +6422,8 @@ async function loadSupaTeamMap(institutionId){
       description:t.description || '',
       color:t.color || '#6366f1',
       minStaff:Number(t.min_staff_required || 0),
+      worksSaturday:t.works_saturday!==false,
+      worksSunday:t.works_sunday!==false,
       scheduled:0,
       present:0
     }));
@@ -6480,6 +6695,8 @@ function renderEquipas(){
     <tr>
       <td class="inst-name">${t.name}</td>
       <td>${count}</td>
+      <td><strong>${Number(t.minStaff||0)}</strong></td>
+      <td style="font-size:12px;">${t.worksSaturday!==false?'Sáb':''}${t.worksSaturday!==false&&t.worksSunday!==false?' · ':''}${t.worksSunday!==false?'Dom':''}${t.worksSaturday===false&&t.worksSunday===false?'2.ª–6.ª':''}</td>
       <td>${t.scheduled}</td>
       <td>${t.present}</td>
       <td>
@@ -6497,6 +6714,9 @@ function openTeamDrawer(name){
   const t = name ? teams.find(x=>x.name===name) : null;
   document.getElementById('team-drawer-title').textContent = t ? 'Editar equipa' : 'Nova equipa';
   document.getElementById('tf-name').value = t ? t.name : '';
+  document.getElementById('tf-min-staff').value = t ? Number(t.minStaff||0) : 0;
+  document.getElementById('tf-works-saturday').checked = t ? t.worksSaturday!==false : true;
+  document.getElementById('tf-works-sunday').checked = t ? t.worksSunday!==false : true;
   document.getElementById('team-drawer').classList.add('open');
   document.getElementById('team-drawer-overlay').classList.add('open');
 }
@@ -6507,6 +6727,9 @@ function closeTeamDrawer(){
 }
 async function saveTeam(){
   const name=document.getElementById('tf-name').value.trim();
+  const minStaff=Math.max(0,Math.floor(Number(document.getElementById('tf-min-staff')?.value)||0));
+  const worksSaturday=!!document.getElementById('tf-works-saturday')?.checked;
+  const worksSunday=!!document.getElementById('tf-works-sunday')?.checked;
   if(!name){showToast('O nome da equipa é obrigatório.',true);return;}
 
   const existing=editingTeamName ? teams.find(t=>t.name===editingTeamName) : null;
@@ -6522,6 +6745,13 @@ async function saveTeam(){
       });
       if(error) throw error;
       if(!data?.id) throw new Error('A equipa não foi devolvida pelo servidor.');
+
+      const [minRes,weekendRes]=await Promise.all([
+        supabaseClient.rpc('set_team_min_staff',{p_team_id:data.id,p_min_staff:minStaff}),
+        supabaseClient.rpc('set_team_weekend_policy',{p_team_id:data.id,p_works_saturday:worksSaturday,p_works_sunday:worksSunday})
+      ]);
+      if(minRes.error) throw minRes.error;
+      if(weekendRes.error) throw weekendRes.error;
 
       await loadSupaTeamMap(currentInstitutionId);
       await loadEmployeesFromSupabase(currentInstitutionId);
@@ -6539,9 +6769,9 @@ async function saveTeam(){
       if(editingTeamName!==name){
         employees.forEach(e=>{if(e.team===editingTeamName)e.team=name;});
       }
-      existing.name=name;
+      existing.name=name; existing.minStaff=minStaff; existing.worksSaturday=worksSaturday; existing.worksSunday=worksSunday;
     }else{
-      teams.push({name,scheduled:0,present:0});
+      teams.push({name,minStaff,worksSaturday,worksSunday,scheduled:0,present:0});
     }
     closeTeamDrawer(); renderEquipas(); populateTeamSelects();
 
@@ -6928,6 +7158,61 @@ let generatedRosterProposal = null;
 function shiftNetMinutes(shift){
   return Math.max(0, shiftDurationMinutes(shift) - Number(shift.breakMinutes || 0));
 }
+
+let rosterFairnessHistory=[];
+
+function picaIsNightShift(shift){
+  if(!shift) return false;
+  const [sh,sm]=String(shift.start||'00:00').split(':').map(Number);
+  const [eh,em]=String(shift.end||'00:00').split(':').map(Number);
+  const startMin=sh*60+sm, endMin=eh*60+em;
+  return isOvernightShift(shift) || startMin>=20*60 || endMin<=6*60;
+}
+function picaIsWeekendDate(ds){
+  const d=new Date(ds+'T12:00:00');
+  const wd=d.getDay();
+  return wd===0 || wd===6;
+}
+async function loadRosterFairnessHistory(institutionId,weekStart){
+  rosterFairnessHistory=[];
+  if(!institutionId||!supabaseClient)return;
+  const start=new Date(weekStart);
+  const to=new Date(start); to.setDate(to.getDate()-1);
+  const from=new Date(start); from.setDate(from.getDate()-28);
+  const {data,error}=await supabaseClient
+    .from('roster_entries')
+    .select('employee_id,shift_type_id,work_date,is_day_off')
+    .eq('institution_id',institutionId)
+    .gte('work_date',dateStr(from))
+    .lte('work_date',dateStr(to))
+    .eq('is_day_off',false);
+  if(error){
+    console.warn('Histórico de justiça da escala indisponível:',error);
+    return;
+  }
+  rosterFairnessHistory=data||[];
+}
+function picaHistoricalFairness(empId){
+  let weekends=0,nights=0;
+  for(const r of rosterFairnessHistory){
+    if(String(r.employee_id)!==String(empId) || r.is_day_off) continue;
+    if(picaIsWeekendDate(r.work_date)) weekends++;
+    const s=shifts.find(x=>String(x.id)===String(r.shift_type_id));
+    if(picaIsNightShift(s)) nights++;
+  }
+  return {weekends,nights};
+}
+function picaProposalFairness(empId,proposal){
+  let weekends=0,nights=0;
+  for(const r of proposal){
+    if(String(r.employeeId)!==String(empId)||r.isDayOff)continue;
+    if(picaIsWeekendDate(r.date))weekends++;
+    const s=shifts.find(x=>String(x.id)===String(r.shiftId));
+    if(picaIsNightShift(s))nights++;
+  }
+  return {weekends,nights};
+}
+
 function employeeWeekScheduledMinutes(empId, proposalEntries=[]){
   const base = rosterEntries.filter(r=>
     String(r.employeeId)===String(empId) &&
@@ -6996,7 +7281,8 @@ async function openRosterGenerator(){
         loadRosterForWeek(currentInstitutionId,currentWeekStart),
         loadSupaTeamMap(currentInstitutionId),
         loadShiftsFromSupabase(currentInstitutionId),
-        loadApprovedVacationsForWeek(currentInstitutionId,currentWeekStart)
+        loadApprovedVacationsForWeek(currentInstitutionId,currentWeekStart),
+        loadRosterFairnessHistory(currentInstitutionId,currentWeekStart)
       ]);
     }
 
@@ -7044,6 +7330,10 @@ function buildRosterProposal(){
   const minRest=Math.max(0,Number(document.getElementById('rg-min-rest').value)||0);
   const respectHours=document.getElementById('rg-respect-hours').checked;
   const replaceExisting=document.getElementById('rg-replace-existing').checked;
+  const includeSaturday=document.getElementById('rg-include-saturday')?.checked!==false;
+  const includeSunday=document.getElementById('rg-include-sunday')?.checked!==false;
+  const balanceWeekends=document.getElementById('rg-balance-weekends')?.checked!==false;
+  const balanceNights=document.getElementById('rg-balance-nights')?.checked!==false;
   const dates=getWeekDates(currentWeekStart);
 
   const targetEmployees = employees.filter(e=>
@@ -7068,45 +7358,79 @@ function buildRosterProposal(){
     return originalEntries.find(r=>String(r.employeeId)===String(empId)&&r.date===ds);
   };
 
-  // Helper with fairness: fewer days, then fewer minutes, then stable name.
-  const scoreEmployees = (a,b)=>{
-    const da=assignedDays[String(a.id)]||0, db=assignedDays[String(b.id)]||0;
-    if(da!==db) return da-db;
-    const ma=employeeWeekScheduledMinutes(a.id,proposal), mb=employeeWeekScheduledMinutes(b.id,proposal);
-    if(ma!==mb) return ma-mb;
-    return a.name.localeCompare(b.name);
+  // Justiça: histórico de 4 semanas + proposta atual.
+  const fairnessScore=(emp,forWeekend=false)=>{
+    const h=picaHistoricalFairness(emp.id);
+    const p=picaProposalFairness(emp.id,proposal);
+    let score=0;
+    if(forWeekend && balanceWeekends) score+=(h.weekends+p.weekends)*1000;
+    score+=(assignedDays[String(emp.id)]||0)*100;
+    score+=Math.floor(employeeWeekScheduledMinutes(emp.id,proposal)/60);
+    return score;
   };
 
   // Generate team by team so minimum staff is meaningful.
   const groups = teamFilter
-    ? [{name:teamFilter, employees:targetEmployees, minStaff:Number(teams.find(t=>t.name===teamFilter)?.minStaff||0)}]
+    ? [(()=>{
+        const t=teams.find(t=>t.name===teamFilter);
+        return {
+          name:teamFilter,
+          employees:targetEmployees,
+          minStaff:Number(t?.minStaff||0),
+          worksSaturday:t?.worksSaturday!==false,
+          worksSunday:t?.worksSunday!==false
+        };
+      })()]
     : teams.map(t=>({
         name:t.name,
         employees:targetEmployees.filter(e=>e.team===t.name),
-        minStaff:Number(t.minStaff||0)
+        minStaff:Number(t.minStaff||0),
+        worksSaturday:t.worksSaturday!==false,
+        worksSunday:t.worksSunday!==false
       })).filter(g=>g.employees.length);
 
   // Employees with no team still get a group.
   const groupedIds=new Set(groups.flatMap(g=>g.employees.map(e=>String(e.id))));
   const ungrouped=targetEmployees.filter(e=>!groupedIds.has(String(e.id)));
-  if(ungrouped.length) groups.push({name:'Sem equipa',employees:ungrouped,minStaff:0});
+  if(ungrouped.length) groups.push({name:'Sem equipa',employees:ungrouped,minStaff:0,worksSaturday:true,worksSunday:true});
 
   for(const group of groups){
     for(let di=0; di<dates.length; di++){
+      const day=dates[di].getDay();
+      const isSaturday=day===6;
+      const isSunday=day===0;
+
+      // Regra global + regra da equipa. Se qualquer uma excluir o dia, não gera turnos.
+      if(isSaturday && (!includeSaturday || group.worksSaturday===false)) continue;
+      if(isSunday && (!includeSunday || group.worksSunday===false)) continue;
+
       const ds=dateStr(dates[di]);
       const available=group.employees.filter(emp=>
         !employeeUnavailableReason(emp.id,ds) &&
+        !picaConstraintUnavailable(emp.id,ds) &&
         (!existingLookup(emp.id,ds) || replaceExisting) &&
         (assignedDays[String(emp.id)]||0) < workDays
       );
 
-      // Minimum coverage or, where not configured, distribute roughly workDays/7 of team each day.
+      // Cobertura mínima ou distribuição pelos dias em que esta equipa realmente trabalha.
+      const activeDays=dates.filter(d=>{
+        const wd=d.getDay();
+        if(wd===6 && (!includeSaturday || group.worksSaturday===false)) return false;
+        if(wd===0 && (!includeSunday || group.worksSunday===false)) return false;
+        return true;
+      }).length || 1;
+      const effectiveWorkDays=Math.min(workDays,activeDays);
       const desired = group.minStaff>0
         ? Math.min(group.minStaff, available.length)
-        : Math.min(available.length, Math.ceil(group.employees.length * workDays / 7));
+        : Math.min(available.length, Math.ceil(group.employees.length * effectiveWorkDays / activeDays));
 
       let assignedToday=0;
-      const sorted=[...available].sort(scoreEmployees);
+      const sorted=[...available].sort((a,b)=>{
+        const sa=fairnessScore(a,isSaturday||isSunday);
+        const sb=fairnessScore(b,isSaturday||isSunday);
+        if(sa!==sb) return sa-sb;
+        return a.name.localeCompare(b.name);
+      });
 
       for(const emp of sorted){
         if(assignedToday>=desired) break;
@@ -7114,12 +7438,28 @@ function buildRosterProposal(){
         const weeklyLimitMin=Number(emp.weeklyHours||40)*60;
         let candidates=[...usableShifts];
 
-        // Rotate shifts by day + employee to distribute them.
+        // Primeiro os turnos onde ainda faltam competências obrigatórias.
+        // Para noites, em empate, favorece quem tem menos noites nas 4 semanas anteriores.
+        const empHist=picaHistoricalFairness(emp.id);
+        const empProp=picaProposalFairness(emp.id,proposal);
+        candidates.sort((a,b)=>{
+          const deficitDiff=picaShiftRequirementDeficit(b.id,ds,proposal)-picaShiftRequirementDeficit(a.id,ds,proposal);
+          if(deficitDiff) return deficitDiff;
+          if(balanceNights){
+            const pa=picaIsNightShift(a)?(empHist.nights+empProp.nights):0;
+            const pb=picaIsNightShift(b)?(empHist.nights+empProp.nights):0;
+            if(pa!==pb) return pa-pb;
+          }
+          return 0;
+        });
+
+        // Em empate, rodar turnos para distribuir carga.
         const seed=(di + Math.abs(hashStr(String(emp.id)))) % Math.max(1,candidates.length);
         candidates=candidates.slice(seed).concat(candidates.slice(0,seed));
 
         let chosen=null;
         for(const shift of candidates){
+          if(!picaEmployeeMeetsShiftRequirements(emp.id,shift.id)) continue;
           const candidate={employeeId:emp.id,date:ds,shiftId:shift.id,isDayOff:false,notes:'Gerado automaticamente'};
           const future=[...proposal,candidate];
           const validation=rosterValidationForAssignment(emp.id,ds,shift.id,proposal,minRest);
@@ -7582,6 +7922,25 @@ async function saveRosterModal(){
 
   const swapTarget = document.getElementById('rm-swap-target').value;
   const notes = document.getElementById('rm-notes').value.trim();
+
+  if(currentInstitutionId && !navigator.onLine){
+    if(swapTarget){
+      const a=getRosterEntry(employeeId,date), b=getRosterEntry(swapTarget,date);
+      picaQueueRosterOffline(employeeId,date,b?.shiftId||null,{isDayOff:!!b?.isDayOff,notes:a?.notes||''});
+      picaQueueRosterOffline(swapTarget,date,a?.shiftId||null,{isDayOff:!!a?.isDayOff,notes:b?.notes||''});
+      swapRosterEntries(employeeId,swapTarget,date);
+    }else{
+      const val=document.getElementById('rm-shift').value;
+      const isDayOff=val==='__OFF__';
+      picaQueueRosterOffline(employeeId,date,isDayOff?null:val,{isDayOff,notes});
+      setRosterEntry(employeeId,date,isDayOff?null:val);
+    }
+    closeRosterModal();
+    renderEscalas();
+    picaSaveOfflineSnapshot();
+    showToast('Alteração guardada neste dispositivo. Será sincronizada quando voltar a ter Internet.');
+    return;
+  }
 
   if(currentInstitutionId){
     try {
@@ -10444,14 +10803,51 @@ function renderMobileDashboardCards(){
 }
 async function refreshAccessHistoryLicenseVisibility(){
   const nav=document.getElementById('nav-access-history');
-  if(!nav||!currentInstitutionId) return false;
+  const accessTab=document.getElementById('settings-access-tab-btn');
+  const accessSection=document.getElementById('settings-terminal-acessos');
+
+  if(!currentInstitutionId || !supabaseClient){
+    if(nav) nav.hidden=true;
+    if(accessTab) accessTab.hidden=true;
+    if(accessSection) accessSection.hidden=true;
+    document.body.classList.remove('access-addon-enabled');
+    hikAccessAddon={...(hikAccessAddon||{}),enabled:false};
+    return false;
+  }
+
   try{
     const {data,error}=await supabaseClient.rpc('get_hikvision_access_addon_summary',{p_institution_id:currentInstitutionId});
     if(error) throw error;
     const s=Array.isArray(data)?(data[0]||{}):(data||{});
-    nav.hidden=!s.enabled;
-    return !!s.enabled;
-  }catch(_){nav.hidden=true;return false;}
+    const enabled=!!s.enabled;
+
+    hikAccessAddon={...(hikAccessAddon||{}),...s,enabled};
+    document.body.classList.toggle('access-addon-enabled',enabled);
+
+    if(nav) nav.hidden=!enabled;
+    if(accessTab) accessTab.hidden=!enabled;
+    if(!enabled && accessSection) accessSection.hidden=true;
+
+    // Se o utilizador estiver numa página/aba de acessos e perder a licença,
+    // regressa imediatamente a uma zona permitida.
+    if(!enabled){
+      const accessPage=document.getElementById('page-historico-acessos');
+      if(accessPage && !accessPage.hidden){
+        openAdminNavPage('dashboard');
+      }
+      const activeAccessTab=document.querySelector('[data-settings-tab="acessos"].active');
+      if(activeAccessTab) setAdminSettingsTab('presencas');
+    }
+
+    return enabled;
+  }catch(_){
+    document.body.classList.remove('access-addon-enabled');
+    hikAccessAddon={...(hikAccessAddon||{}),enabled:false};
+    if(nav) nav.hidden=true;
+    if(accessTab) accessTab.hidden=true;
+    if(accessSection) accessSection.hidden=true;
+    return false;
+  }
 }
 async function renderAccessHistory(){
   if(!currentInstitutionId) return;
@@ -10592,6 +10988,7 @@ wireSidebarNav('#admin-dashboard-screen', {
   trocas:{id:'page-trocas', render:renderAdminShiftSwaps},
   'banco-horas':{id:'page-banco-horas', render:renderTimeBank},
   'historico-acessos':{id:'page-historico-acessos', render:renderAccessHistory},
+  'licencas-admin':{id:'settings-licencas', render:renderAdminLicense},
   definicoes:{id:'page-definicoes', render:renderAdminDefinicoes},
 });
 
@@ -10611,6 +11008,22 @@ function euroCents(c){ return new Intl.NumberFormat('pt-PT',{style:'currency',cu
 
 async function loadAccessControlData(){
   if(!currentInstitutionId || !supabaseClient) return;
+
+  const {data:addonGateData,error:addonGateError}=await supabaseClient.rpc('get_hikvision_access_addon_summary',{p_institution_id:currentInstitutionId});
+  if(addonGateError) throw addonGateError;
+  const addonGate=Array.isArray(addonGateData)?(addonGateData[0]||{}):(addonGateData||{});
+  hikAccessAddon={...(hikAccessAddon||{}),...addonGate,enabled:!!addonGate.enabled};
+  if(!hikAccessAddon.enabled){
+    hikAccessDevices=[];
+    hikAccessPermissions=[];
+    hikAccessDeviceGroups=[];
+    hikAccessGroupMembers=[];
+    hikAccessSyncQueue=[];
+    document.body.classList.remove('access-addon-enabled');
+    return;
+  }
+
+  document.body.classList.add('access-addon-enabled');
 
   const [sumRes,devRes,permRes,groupRes,memberRes,queueRes]=await Promise.all([
     supabaseClient.rpc('get_hikvision_access_addon_summary',{p_institution_id:currentInstitutionId}),
@@ -10767,6 +11180,13 @@ function fillAccessControlUI(){
 }
 
 async function renderTerminalAcessos(){
+  const licensed = await refreshAccessHistoryLicenseVisibility();
+  if(!licensed){
+    const section=document.getElementById('settings-terminal-acessos');
+    if(section) section.hidden=true;
+    return;
+  }
+
   const nowLocal=new Date();
   const later=new Date(nowLocal.getTime()+30*24*60*60*1000);
   const localValue=d=>{const z=new Date(d.getTime()-d.getTimezoneOffset()*60000);return z.toISOString().slice(0,16);};
@@ -11515,27 +11935,26 @@ async function saveHikvisionMappings(){
 let adminLicenseData = null;
 
 function setAdminSettingsTab(tab){
+  if(tab==='acessos' && !hikAccessAddon?.enabled){
+    tab='presencas';
+  }
   const presencas = tab==='presencas';
-  const acessos = tab==='acessos';
-  const licencas = tab==='licencas';
+  const acessos = tab==='acessos' && !!hikAccessAddon?.enabled;
 
   const general=document.getElementById('settings-presencas-general');
   const point=document.getElementById('settings-terminal-ponto');
   const save=document.getElementById('settings-presencas-save');
   const access=document.getElementById('settings-terminal-acessos');
-  const licenses=document.getElementById('settings-licencas');
 
   if(general) general.hidden=!presencas;
   if(point) point.hidden=!presencas;
   if(save) save.hidden=!presencas;
   if(access) access.hidden=!acessos;
-  if(licenses) licenses.hidden=!licencas;
 
   document.querySelectorAll('[data-settings-tab]').forEach(btn=>{
     btn.classList.toggle('active',btn.dataset.settingsTab===tab);
   });
 
-  if(licencas) renderAdminLicense();
   if(acessos) renderTerminalAcessos();
   if(presencas) loadHikvisionConfig();
 }
@@ -11574,7 +11993,7 @@ async function renderAdminLicense(){
         .eq('institution_id',currentInstitutionId).order('created_at',{ascending:false}).limit(1).maybeSingle(),
       supabaseClient.rpc('get_hikvision_access_addon_summary',{p_institution_id:currentInstitutionId}),
       supabaseClient.from('addon_license_requests')
-        .select('id,requested_units,status,request_type,admin_note,review_note,created_at,reviewed_at,amount_cents,billing_scope,previous_units,units_delta,effective_date,addon_amount_cents,base_amount_cents,proration_days,period_days,period_end_date')
+        .select('id,requested_units,status,request_type,admin_note,review_note,created_at,reviewed_at,amount_cents,billing_scope,previous_units,units_delta,effective_date,addon_amount_cents,base_amount_cents,proration_days,period_days,period_end_date,payment_requested_at,payment_confirmed_at')
         .eq('institution_id',currentInstitutionId).eq('addon_code','hikvision_access_control')
         .order('created_at',{ascending:false}).limit(5)
     ]);
@@ -11586,7 +12005,7 @@ async function renderAdminLicense(){
     const lic=licenseRes.data||null;
     const addon=Array.isArray(addonRes.data)?(addonRes.data[0]||{}):(addonRes.data||{});
     const requests=requestRes.data||[];
-    const pending=requests.find(r=>r.status==='pending');
+    const pending=requests.find(r=>['pending','awaiting_payment','paid'].includes(r.status));
     adminLicenseData={license:lic,addon,requests};
 
     if(!lic){
@@ -11631,11 +12050,18 @@ async function renderAdminLicense(){
       unitsInput.oninput=()=>{unitsInput.dataset.userEdited='1';};
     }
     if(reqBtn) reqBtn.disabled=!!pending;
+    setTimeout(refreshAdminAccessPricePreview,0);
 
     if(reqState){
       if(pending){
         const label=pending.request_type==='upgrade'?'Aumento':pending.request_type==='downgrade'?'Redução':'Novo add-on';
-        reqState.innerHTML=`<div class="hint-chip">${label} pendente: <strong>${pending.requested_units} lugares</strong>. Aguarda emissão pelo Super Admin.</div>`;
+        const amount=fmtLicenseMoney(pending.amount_cents||0,lic.currency||'EUR');
+        const state=pending.status==='awaiting_payment'
+          ? `Aguarda pagamento de <strong>${amount}</strong>. Depois do pagamento, o Super Admin confirma a receção.`
+          : pending.status==='paid'
+            ? `Pagamento de <strong>${amount}</strong> confirmado. Aguarda ativação pelo Super Admin.`
+            : 'Pedido em processamento.';
+        reqState.innerHTML=`<div class="hint-chip">${label}: <strong>${pending.requested_units} lugares</strong> · ${state}</div>`;
       }else if(pendingLicensed!=null && pendingEffective){
         reqState.innerHTML=`<div class="hint-chip">Redução já aprovada: o limite passa para <strong>${pendingLicensed} lugares</strong> em <strong>${new Date(pendingEffective+'T12:00:00').toLocaleDateString('pt-PT')}</strong>.</div>`;
       }else if(requests[0]?.status==='issued'){
@@ -11654,6 +12080,49 @@ async function renderAdminLicense(){
   }
 }
 
+
+let adminAccessPreviewTimer=null;
+async function refreshAdminAccessPricePreview(){
+  const box=document.getElementById('admin-access-price-preview');
+  const input=document.getElementById('admin-access-request-units');
+  if(!box||!input||!currentInstitutionId||!supabaseClient)return;
+
+  const units=Number(input.value||0);
+  if(!Number.isInteger(units)||units<1){
+    box.textContent='Indica um número válido de lugares.';
+    return;
+  }
+
+  box.textContent='A calcular…';
+  try{
+    const {data,error}=await supabaseClient.rpc('preview_my_access_addon_request',{
+      p_requested_units:units,
+      p_billing_scope:'addon_only'
+    });
+    if(error) throw error;
+
+    const amount=fmtLicenseMoney(data.total_amount_cents||0,data.currency||'EUR');
+    const monthly=fmtLicenseMoney(units*100,data.currency||'EUR');
+    const typeLabel=data.request_type==='upgrade'?'Aumento de licença':data.request_type==='downgrade'?'Redução de licença':'Novo add-on';
+    const timing=data.request_type==='downgrade'
+      ? `A redução entra em vigor em ${new Date(data.effective_date+'T12:00:00').toLocaleDateString('pt-PT')}.`
+      : (data.proration_days!=null && data.period_days!=null
+        ? `Valor calculado proporcionalmente ao período atual (${data.proration_days}/${data.period_days} dias).`
+        : '');
+
+    box.innerHTML=`<strong>${typeLabel}</strong><br>
+      ${units} lugar(es) · ${monthly}/mês<br>
+      <span style="font-size:18px;font-weight:800;">A pagar agora: ${amount}</span>
+      ${timing?`<br><span style="font-size:11px;color:var(--ink-faint);">${timing}</span>`:''}`;
+  }catch(err){
+    box.textContent='Não foi possível calcular o valor: '+(err.message||'erro');
+  }
+}
+document.getElementById('admin-access-request-units')?.addEventListener('input',()=>{
+  clearTimeout(adminAccessPreviewTimer);
+  adminAccessPreviewTimer=setTimeout(refreshAdminAccessPricePreview,250);
+});
+
 async function requestAccessAddonLicense(){
   const units=Number(document.getElementById('admin-access-request-units')?.value||0);
   const note=document.getElementById('admin-access-request-note')?.value?.trim()||null;
@@ -11664,8 +12133,26 @@ async function requestAccessAddonLicense(){
     return;
   }
 
-  const old=btn?.textContent||'Enviar pedido';
-  if(btn){btn.disabled=true;btn.textContent='A enviar…';}
+  let preview=null;
+  try{
+    const {data,error}=await supabaseClient.rpc('preview_my_access_addon_request',{
+      p_requested_units:units,
+      p_billing_scope:'addon_only'
+    });
+    if(error) throw error;
+    preview=data;
+  }catch(err){
+    showToast('Não foi possível calcular o valor: '+(err.message||''),true);
+    return;
+  }
+
+  const amount=fmtLicenseMoney(preview.total_amount_cents||0,preview.currency||'EUR');
+  const monthly=fmtLicenseMoney(units*100,preview.currency||'EUR');
+  const ok=confirm(`Resumo do pedido\n\nControlo de Acessos: ${units} lugar(es)\nValor mensal: ${monthly}\nA pagar agora: ${amount}\n\nA licença só é ativada depois de o pagamento ser confirmado pelo Super Admin.\n\nPedir emissão?`);
+  if(!ok) return;
+
+  const old=btn?.textContent||'Pedir emissão';
+  if(btn){btn.disabled=true;btn.textContent='A pedir…';}
 
   try{
     const {data,error}=await supabaseClient.rpc('request_access_addon',{
@@ -11687,9 +12174,10 @@ async function requestAccessAddonLicense(){
       emailOk=false;
     }
 
+    const total=fmtLicenseMoney(data.total_amount_cents||preview.total_amount_cents||0,data.currency||preview.currency||'EUR');
     showToast(emailOk
-      ? `Pedido de ${units} lugares enviado. Receberás confirmação por email.`
-      : `Pedido de ${units} lugares enviado ao Super Admin. O email de confirmação não foi enviado.`
+      ? `Pedido enviado. Receberás por email os dados para pagamento de ${total}.`
+      : `Pedido enviado. Valor a pagar: ${total}. O email de pagamento não foi enviado.`
     );
 
     await renderAdminLicense();
@@ -12671,6 +13159,423 @@ setInterval(()=>{
     loadAccessControlData().then(fillAccessControlUI).catch(()=>{});
   }
 },30000);
+
+
+/* ===== PICA-AQUI FEATURE PACK 2026-08-28 ===== */
+let picaInstallPrompt=null;
+const PICA_OFFLINE_KEY='pica_aqui_offline_snapshot_v2';
+
+function picaSafeArray(name){
+  try{ const v=eval(name); return Array.isArray(v)?v:[]; }catch(_){ return []; }
+}
+function picaSaveOfflineSnapshot(){
+  if(!navigator.onLine) return;
+  try{
+    const snap={
+      savedAt:new Date().toISOString(),
+      institutionId:(typeof currentInstitutionId!=='undefined'?currentInstitutionId:null),
+      employees:picaSafeArray('employees').map(e=>({id:e.id,name:e.name||e.full_name,team:e.team||e.team_id,status:e.status,schedule:e.schedule})),
+      roster:picaSafeArray('rosterEntries').slice(-1000).map(r=>({employeeId:r.employeeId||r.employee_id,date:r.date||r.work_date,shiftId:r.shiftId||r.shift_type_id,isDayOff:r.is_day_off||r.isDayOff,status:r.status})),
+      teams:picaSafeArray('teams').map(t=>({id:t.id,name:t.name,minStaff:t.min_staff_required||t.minStaffRequired||0})),
+      shifts:picaSafeArray('shifts').map(s=>({id:s.id,name:s.name,start:s.start||s.start_time,end:s.end||s.end_time}))
+    };
+    localStorage.setItem(PICA_OFFLINE_KEY,JSON.stringify(snap));
+  }catch(e){ console.warn('Snapshot offline:',e); }
+}
+function picaRenderOfflineSnapshot(){
+  let s=null; try{s=JSON.parse(localStorage.getItem(PICA_OFFLINE_KEY)||'null')}catch(_){}
+  const stamp=document.getElementById('pica-offline-stamp');
+  if(stamp) stamp.textContent=s?.savedAt?'Cópia local de '+new Date(s.savedAt).toLocaleString('pt-PT'):'Ainda não existe cópia local.';
+  const er=document.getElementById('pica-offline-employees'), rr=document.getElementById('pica-offline-roster'), ar=document.getElementById('pica-offline-admin');
+  if(er) er.innerHTML=(s?.employees||[]).slice(0,200).map(e=>`<div class="pica-offline-row"><strong>${hikEsc?.(e.name||'')||e.name||''}</strong><small>${e.status||''}</small></div>`).join('')||'<small>Sem colaboradores guardados.</small>';
+  if(rr){
+    const emp=new Map((s?.employees||[]).map(e=>[String(e.id),e.name]));
+    const sh=new Map((s?.shifts||[]).map(x=>[String(x.id),x.name]));
+    rr.innerHTML=(s?.roster||[]).sort((a,b)=>String(a.date).localeCompare(String(b.date))).slice(0,250).map(r=>`<div class="pica-offline-row"><strong>${r.date||''}</strong> · ${emp.get(String(r.employeeId))||'Colaborador'} · ${r.isDayOff?'Folga':(sh.get(String(r.shiftId))||'Turno')}</div>`).join('')||'<small>Sem escala guardada.</small>';
+  }
+  if(ar) ar.innerHTML=[...(s?.teams||[]).map(t=>`<div class="pica-offline-row">Equipa <strong>${t.name}</strong> · mínimo ${t.minStaff||0}</div>`),...(s?.shifts||[]).map(x=>`<div class="pica-offline-row">Turno <strong>${x.name}</strong> · ${x.start||''}–${x.end||''}</div>`)].join('')||'<small>Sem dados administrativos guardados.</small>';
+}
+function picaNetworkState(){
+  const offline=!navigator.onLine;
+  const bar=document.getElementById('pica-offline-bar');
+  if(bar) bar.hidden=!offline;
+  if(offline){ picaRenderOfflineSnapshot(); document.getElementById('pica-offline-panel').hidden=false; }
+  else document.getElementById('pica-offline-panel').hidden=true;
+}
+window.addEventListener('online',()=>{picaNetworkState();picaSaveOfflineSnapshot();});
+window.addEventListener('offline',picaNetworkState);
+document.getElementById('pica-offline-close')?.addEventListener('click',()=>document.getElementById('pica-offline-panel').hidden=true);
+setInterval(picaSaveOfflineSnapshot,60000);
+window.addEventListener('load',()=>setTimeout(()=>{picaSaveOfflineSnapshot();picaNetworkState();},1800));
+
+/* Instalação PWA */
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault(); picaInstallPrompt=e;
+  const b=document.getElementById('pica-install-btn'); if(b) b.hidden=false;
+});
+window.addEventListener('appinstalled',()=>{
+  picaInstallPrompt=null; const b=document.getElementById('pica-install-btn'); if(b)b.hidden=true;
+  try{showToast('Pica-Aqui instalado com sucesso.')}catch(_){}
+});
+document.getElementById('pica-install-btn')?.addEventListener('click',async()=>{
+  if(!picaInstallPrompt) return;
+  picaInstallPrompt.prompt(); await picaInstallPrompt.userChoice.catch(()=>null); picaInstallPrompt=null;
+  document.getElementById('pica-install-btn').hidden=true;
+});
+if(window.matchMedia?.('(display-mode: standalone)').matches) document.getElementById('pica-install-btn')?.setAttribute('hidden','');
+
+/* Notificações do sistema enquanto a sessão está ativa; subscrição Web Push fica preparada no backend. */
+async function picaEnableNotifications(){
+  if(!('Notification' in window)) return false;
+  if(Notification.permission==='granted') return true;
+  if(Notification.permission==='denied') return false;
+  return (await Notification.requestPermission())==='granted';
+}
+let picaLastSystemNotificationAt=Date.now();
+async function picaPollSystemNotifications(){
+  if(!navigator.onLine || !supabaseClient || Notification?.permission!=='granted') return;
+  try{
+    const {data}=await supabaseClient.from('app_notifications').select('id,title,message,created_at,target_page').gt('created_at',new Date(picaLastSystemNotificationAt).toISOString()).order('created_at');
+    for(const n of data||[]){
+      navigator.serviceWorker?.ready.then(reg=>reg.showNotification(n.title,{body:n.message,icon:'logo-pica-aqui.png',badge:'logo-pica-aqui.png',tag:'pica-'+n.id,data:{target_page:n.target_page}})).catch(()=>{});
+    }
+    picaLastSystemNotificationAt=Date.now();
+  }catch(_){}
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('#admin-notification-btn,#sa-notification-btn');
+  if(b) picaEnableNotifications().catch(()=>{});
+},{passive:true});
+setInterval(picaPollSystemNotifications,45000);
+
+/* HIKVISION: diagnóstico rápido e estado pessoa/porta */
+async function picaRunHikvisionDiagnostics(){
+  if(!currentInstitutionId||!supabaseClient) return;
+  await loadAccessControlData();
+  const results=[];
+  for(const d of hikAccessDevices.filter(x=>x.enabled)){
+    const started=performance.now();
+    try{
+      const {data,error}=await supabaseClient.functions.invoke('test-hikvision-connection',{body:{institution_id:currentInstitutionId,device_id:d.id,protocol:d.protocol,host:d.host,port:d.port,username:d.username}});
+      results.push({device:d,ok:!error&&!!data?.ok,latency:Math.round(performance.now()-started),info:data,error:error?.message||data?.error});
+    }catch(e){results.push({device:d,ok:false,latency:Math.round(performance.now()-started),error:e.message});}
+  }
+  window.__picaHikDiagnostics=results;
+  const box=document.getElementById('access-auto-sync-status');
+  if(box){
+    box.insertAdjacentHTML('afterend',`<div class="pica-hik-health" id="pica-hik-health">${results.map(r=>`<div class="pica-health-card"><strong>${r.device.name||'Terminal'}</strong><span class="${r.ok?'pica-health-ok':'pica-health-bad'}">${r.ok?'Online':'Offline'}</span><div>${r.latency} ms${r.info?.model?' · '+r.info.model:''}</div>${r.error?`<small>${String(r.error).slice(0,150)}</small>`:''}</div>`).join('')}</div>`);
+  }
+  return results;
+}
+window.picaRunHikvisionDiagnostics=picaRunHikvisionDiagnostics;
+
+/* Validação local do motor de escalas: mínimos, competências e indisponibilidades.
+   As regras são persistidas no Supabase pelas novas tabelas. */
+async function picaLoadRosterConstraints(){
+  if(!currentInstitutionId||!supabaseClient) return {skills:[],requirements:[],unavailability:[]};
+  const [a,b,c]=await Promise.all([
+    supabaseClient.from('employee_skills').select('*').eq('institution_id',currentInstitutionId),
+    supabaseClient.from('shift_skill_requirements').select('*').eq('institution_id',currentInstitutionId),
+    supabaseClient.from('employee_unavailability').select('*').eq('institution_id',currentInstitutionId)
+  ]);
+  return {skills:a.data||[],requirements:b.data||[],unavailability:c.data||[]};
+}
+async function picaValidateRosterIntelligence(entries){
+  const c=await picaLoadRosterConstraints(), problems=[];
+  const empSkills=new Map();
+  c.skills.forEach(s=>{const k=String(s.employee_id);if(!empSkills.has(k))empSkills.set(k,[]);empSkills.get(k).push(s)});
+  for(const r of entries||[]){
+    const date=r.date||r.work_date, eid=String(r.employeeId||r.employee_id), sid=String(r.shiftId||r.shift_type_id);
+    if(!date||!eid||!sid) continue;
+    const dayStart=new Date(date+'T00:00:00'),dayEnd=new Date(date+'T23:59:59');
+    if(c.unavailability.some(u=>String(u.employee_id)===eid&&new Date(u.starts_at)<=dayEnd&&new Date(u.ends_at)>=dayStart))
+      problems.push({type:'unavailability',employee_id:eid,date});
+    for(const req of c.requirements.filter(x=>String(x.shift_type_id)===sid)){
+      const skill=(empSkills.get(eid)||[]).find(s=>s.skill===req.skill&&Number(s.level)>=Number(req.min_level));
+      if(!skill) problems.push({type:'skill',employee_id:eid,date,skill:req.skill});
+    }
+  }
+  return problems;
+}
+window.picaValidateRosterIntelligence=picaValidateRosterIntelligence;
+
+
+/* ===== PICA-AQUI ADVANCED PACK: PUSH + SMART ROSTER + HIKVISION CONSISTENCY ===== */
+let picaRosterConstraints={skills:[],requirements:[],unavailability:[]};
+const PICA_OFFLINE_OPS_KEY='pica_aqui_offline_ops_v1';
+let picaHikCompareRows=[];
+
+function picaEsc(v){
+  try{return analyticsEsc(String(v??''))}catch(_){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+}
+function picaLocalDateRangeHit(ds,start,end){
+  const a=new Date(ds+'T00:00:00'), b=new Date(ds+'T23:59:59');
+  return new Date(start)<=b && new Date(end)>=a;
+}
+function picaConstraintUnavailable(employeeId,ds){
+  return picaRosterConstraints.unavailability.some(u=>String(u.employee_id)===String(employeeId)&&picaLocalDateRangeHit(ds,u.starts_at,u.ends_at));
+}
+function picaEmployeeSkill(employeeId,skill,minLevel=1){
+  return picaRosterConstraints.skills.some(s=>String(s.employee_id)===String(employeeId)&&String(s.skill).toLowerCase()===String(skill).toLowerCase()&&Number(s.level)>=Number(minLevel||1));
+}
+function picaEmployeeMeetsShiftRequirements(employeeId,shiftId){
+  const reqs=picaRosterConstraints.requirements.filter(r=>String(r.shift_type_id)===String(shiftId));
+  return reqs.every(r=>picaEmployeeSkill(employeeId,r.skill,r.min_level));
+}
+function picaShiftRequirementDeficit(shiftId,ds,proposal){
+  const reqs=picaRosterConstraints.requirements.filter(r=>String(r.shift_type_id)===String(shiftId));
+  if(!reqs.length) return 0;
+  const assigned=(proposal||[]).filter(r=>r.date===ds&&String(r.shiftId)===String(shiftId));
+  return reqs.reduce((sum,r)=>{
+    const qualified=assigned.filter(a=>picaEmployeeSkill(a.employeeId,r.skill,r.min_level)).length;
+    return sum+Math.max(0,Number(r.min_people||1)-qualified);
+  },0);
+}
+
+async function picaRefreshRosterConstraints(){
+  try{
+    picaRosterConstraints=await picaLoadRosterConstraints();
+    picaRenderRosterRulesUI();
+  }catch(e){console.warn('Regras inteligentes:',e)}
+}
+function picaRenderRosterRulesUI(){
+  const empOptions=employees.map(e=>`<option value="${e.id}">${picaEsc(e.name)}</option>`).join('');
+  const shiftOptions=shifts.map(s=>`<option value="${s.id}">${picaEsc(s.name)}</option>`).join('');
+  ['rg-skill-employee','rg-unav-employee'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=empOptions});
+  const rs=document.getElementById('rg-req-shift'); if(rs)rs.innerHTML=shiftOptions;
+
+  const tm=document.getElementById('rg-team-min-list');
+  if(tm)tm.innerHTML=teams.map(t=>`
+    <div style="border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin:7px 0;">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <strong style="flex:1;min-width:150px;">${picaEsc(t.name)}</strong>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;">Mínimo <input class="rg-team-min-input" data-team-id="${t.id}" type="number" min="0" value="${Number(t.minStaff||t.min_staff_required||0)}" style="width:70px;"></label>
+        <button type="button" class="btn-outline rg-team-min-save" data-team-id="${t.id}" style="padding:6px 10px;">Guardar mínimo</button>
+      </div>
+      <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-top:9px;">
+        <label style="display:flex;gap:6px;align-items:center;font-size:12px;"><input type="checkbox" class="rg-team-saturday" data-team-id="${t.id}" ${t.worksSaturday!==false?'checked':''}> Trabalha sábado</label>
+        <label style="display:flex;gap:6px;align-items:center;font-size:12px;"><input type="checkbox" class="rg-team-sunday" data-team-id="${t.id}" ${t.worksSunday!==false?'checked':''}> Trabalha domingo</label>
+        <button type="button" class="btn-outline rg-team-weekend-save" data-team-id="${t.id}" style="padding:6px 10px;">Guardar fim de semana</button>
+      </div>
+    </div>`).join('')||'<small>Sem equipas.</small>';
+
+  const sl=document.getElementById('rg-skill-list');
+  if(sl)sl.innerHTML=picaRosterConstraints.skills.map(s=>`<div class="hint-chip" style="display:flex;justify-content:space-between;gap:8px;margin:5px 0;"><span>${picaEsc(employees.find(e=>String(e.id)===String(s.employee_id))?.name||'Colaborador')} · <strong>${picaEsc(s.skill)}</strong> · nível ${s.level}</span><button type="button" class="action-btn rg-rule-delete" data-kind="skill" data-id="${s.id}">✕</button></div>`).join('')||'<small>Sem competências configuradas.</small>';
+
+  const rl=document.getElementById('rg-req-list');
+  if(rl)rl.innerHTML=picaRosterConstraints.requirements.map(r=>`<div class="hint-chip" style="display:flex;justify-content:space-between;gap:8px;margin:5px 0;"><span>${picaEsc(shifts.find(s=>String(s.id)===String(r.shift_type_id))?.name||'Turno')} · <strong>${picaEsc(r.skill)}</strong> · mín. ${r.min_people} pessoa(s), nível ${r.min_level}</span><button type="button" class="action-btn rg-rule-delete" data-kind="req" data-id="${r.id}">✕</button></div>`).join('')||'<small>Sem requisitos configurados.</small>';
+
+  const ul=document.getElementById('rg-unav-list');
+  if(ul)ul.innerHTML=picaRosterConstraints.unavailability.map(u=>`<div class="hint-chip" style="display:flex;justify-content:space-between;gap:8px;margin:5px 0;"><span>${picaEsc(employees.find(e=>String(e.id)===String(u.employee_id))?.name||'Colaborador')} · ${new Date(u.starts_at).toLocaleString('pt-PT')} → ${new Date(u.ends_at).toLocaleString('pt-PT')}${u.reason?' · '+picaEsc(u.reason):''}</span><button type="button" class="action-btn rg-rule-delete" data-kind="unav" data-id="${u.id}">✕</button></div>`).join('')||'<small>Sem indisponibilidades.</small>';
+}
+
+document.getElementById('escala-generator-btn')?.addEventListener('click',()=>setTimeout(picaRefreshRosterConstraints,350));
+
+document.getElementById('rg-skill-save')?.addEventListener('click',async()=>{
+  const employee=document.getElementById('rg-skill-employee').value, skill=document.getElementById('rg-skill-name').value.trim(), level=Number(document.getElementById('rg-skill-level').value||1);
+  if(!employee||!skill)return showToast('Seleciona colaborador e competência.',true);
+  const {error}=await supabaseClient.rpc('save_employee_skill',{p_employee_id:employee,p_skill:skill,p_level:level}); if(error)return showToast(error.message,true);
+  document.getElementById('rg-skill-name').value=''; await picaRefreshRosterConstraints(); showToast('Competência guardada.');
+});
+document.getElementById('rg-req-save')?.addEventListener('click',async()=>{
+  const shift=document.getElementById('rg-req-shift').value, skill=document.getElementById('rg-req-skill').value.trim();
+  const people=Number(document.getElementById('rg-req-min-people').value||1), level=Number(document.getElementById('rg-req-min-level').value||1);
+  if(!shift||!skill)return showToast('Seleciona turno e competência.',true);
+  const {error}=await supabaseClient.rpc('save_shift_skill_requirement',{p_shift_type_id:shift,p_skill:skill,p_min_people:people,p_min_level:level}); if(error)return showToast(error.message,true);
+  document.getElementById('rg-req-skill').value=''; await picaRefreshRosterConstraints(); showToast('Requisito guardado.');
+});
+document.getElementById('rg-unav-save')?.addEventListener('click',async()=>{
+  const employee=document.getElementById('rg-unav-employee').value,start=document.getElementById('rg-unav-start').value,end=document.getElementById('rg-unav-end').value,reason=document.getElementById('rg-unav-reason').value.trim();
+  if(!employee||!start||!end)return showToast('Preenche colaborador, início e fim.',true);
+  const {error}=await supabaseClient.rpc('save_employee_unavailability',{p_employee_id:employee,p_starts_at:new Date(start).toISOString(),p_ends_at:new Date(end).toISOString(),p_reason:reason||null}); if(error)return showToast(error.message,true);
+  await picaRefreshRosterConstraints(); showToast('Indisponibilidade guardada.');
+});
+document.addEventListener('click',async e=>{
+  const del=e.target.closest('.rg-rule-delete');
+  if(del){
+    const fn=del.dataset.kind==='skill'?'delete_employee_skill':del.dataset.kind==='req'?'delete_shift_skill_requirement':'delete_employee_unavailability';
+    const {error}=await supabaseClient.rpc(fn,{p_id:del.dataset.id}); if(error)return showToast(error.message,true);
+    await picaRefreshRosterConstraints(); return;
+  }
+  const min=e.target.closest('.rg-team-min-save');
+  if(min){
+    const input=document.querySelector(`.rg-team-min-input[data-team-id="${min.dataset.teamId}"]`);
+    const {error}=await supabaseClient.rpc('set_team_min_staff',{p_team_id:min.dataset.teamId,p_min_staff:Number(input?.value||0)}); if(error)return showToast(error.message,true);
+    const t=teams.find(x=>String(x.id)===String(min.dataset.teamId)); if(t)t.minStaff=Number(input?.value||0);
+    showToast('Cobertura mínima atualizada.');
+    return;
+  }
+
+  const weekend=e.target.closest('.rg-team-weekend-save');
+  if(weekend){
+    const id=weekend.dataset.teamId;
+    const sat=document.querySelector(`.rg-team-saturday[data-team-id="${id}"]`)?.checked||false;
+    const sun=document.querySelector(`.rg-team-sunday[data-team-id="${id}"]`)?.checked||false;
+    const {error}=await supabaseClient.rpc('set_team_weekend_policy',{
+      p_team_id:id,
+      p_works_saturday:sat,
+      p_works_sunday:sun
+    });
+    if(error)return showToast(error.message,true);
+    const t=teams.find(x=>String(x.id)===String(id));
+    if(t){t.worksSaturday=sat;t.worksSunday=sun;}
+    showToast(`Fim de semana da equipa atualizado: ${sat?'sábado sim':'sábado não'} · ${sun?'domingo sim':'domingo não'}.`);
+  }
+});
+
+/* Offline queue para alterações simples de escala */
+function picaOfflineOps(){try{return JSON.parse(localStorage.getItem(PICA_OFFLINE_OPS_KEY)||'[]')}catch(_){return []}}
+function picaQueueRosterOffline(employeeId,date,shiftId,opts={}){
+  const q=picaOfflineOps();
+  q.push({id:crypto.randomUUID(),type:'roster_upsert',createdAt:new Date().toISOString(),employeeId,date,shiftId,opts});
+  localStorage.setItem(PICA_OFFLINE_OPS_KEY,JSON.stringify(q));
+}
+async function picaFlushOfflineOps(){
+  if(!navigator.onLine||!currentInstitutionId)return;
+  let q=picaOfflineOps(); if(!q.length)return;
+  const remaining=[];
+  for(const op of q){
+    try{
+      if(op.type==='roster_upsert') await supaUpsertRoster(op.employeeId,op.date,op.shiftId,op.opts||{});
+    }catch(e){remaining.push(op)}
+  }
+  localStorage.setItem(PICA_OFFLINE_OPS_KEY,JSON.stringify(remaining));
+  if(remaining.length!==q.length){try{showToast(`${q.length-remaining.length} alteração(ões) offline sincronizada(s).`)}catch(_){}}
+}
+window.addEventListener('online',()=>setTimeout(picaFlushOfflineOps,700));
+setTimeout(picaFlushOfflineOps,2500);
+
+/* Push Web: subscrição persistente */
+function picaB64ToUint8Array(base64){
+  const pad='='.repeat((4-base64.length%4)%4), s=(base64+pad).replace(/-/g,'+').replace(/_/g,'/');
+  const raw=atob(s); return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));
+}
+async function picaEnableWebPush(){
+  if(!('serviceWorker'in navigator)||!('PushManager'in window)||!('Notification'in window))throw new Error('Este browser não suporta notificações Push.');
+  const perm=await Notification.requestPermission(); if(perm!=='granted')throw new Error('Permissão de notificações não concedida.');
+  const {data:key,error:keyErr}=await supabaseClient.rpc('get_push_public_key'); if(keyErr||!key)throw keyErr||new Error('Chave Push indisponível.');
+  const reg=await navigator.serviceWorker.ready;
+  let sub=await reg.pushManager.getSubscription();
+  if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:picaB64ToUint8Array(key)});
+  const j=sub.toJSON(), {error}=await supabaseClient.rpc('save_push_subscription',{p_endpoint:sub.endpoint,p_p256dh:j.keys?.p256dh,p_auth:j.keys?.auth,p_user_agent:navigator.userAgent});
+  if(error)throw error;
+  picaRenderPushState(true); return true;
+}
+async function picaDisableWebPush(){
+  const reg=await navigator.serviceWorker.ready, sub=await reg.pushManager.getSubscription();
+  if(sub){await supabaseClient.rpc('disable_push_subscription',{p_endpoint:sub.endpoint}).catch(()=>{});await sub.unsubscribe().catch(()=>{})}
+  picaRenderPushState(false);
+}
+function picaRenderPushState(on){
+  const chip=document.getElementById('push-status-chip'); if(chip)chip.textContent=on?'Push ativo neste dispositivo · recebe alertas mesmo com a app fechada.':'Push desativado neste dispositivo.';
+  const en=document.getElementById('push-enable-btn'); if(en)en.hidden=!!on;
+  const dis=document.getElementById('push-disable-btn'); if(dis)dis.hidden=!on;
+}
+async function picaRefreshPushState(){
+  try{const reg=await navigator.serviceWorker.ready; picaRenderPushState(!!(await reg.pushManager.getSubscription()));}catch(_){picaRenderPushState(false)}
+}
+document.getElementById('push-enable-btn')?.addEventListener('click',()=>picaEnableWebPush().then(()=>showToast('Notificações Push ativadas.')).catch(e=>showToast(e.message,true)));
+document.getElementById('push-disable-btn')?.addEventListener('click',()=>picaDisableWebPush().then(()=>showToast('Notificações Push desativadas.')));
+window.addEventListener('load',()=>setTimeout(picaRefreshPushState,1800));
+
+/* Abre o centro Push/Notificações verdadeiro em paralelo com o centro legado. */
+function picaOpenLiveNotificationCenter(){
+  const c=document.getElementById('notification-center-live'),o=document.getElementById('notification-overlay-live');
+  if(c)c.style.display='block'; if(o)o.classList.add('open'); picaRefreshPushState();
+  if(document.getElementById('notification-list-live'))document.getElementById('notification-list-live').innerHTML=(appNotifications||[]).slice(0,30).map(n=>`<button class="notification-item ${n.read_at?'':'unread'}" type="button" onclick='openAppNotification(${JSON.stringify({id:n.id,target_page:n.target_page}).replace(/'/g,"&#39;")})'><strong>${picaEsc(n.title)}</strong><span>${picaEsc(n.message)}</span></button>`).join('')||'<div class="notification-empty">Sem notificações.</div>';
+}
+function picaCloseLiveNotificationCenter(){const c=document.getElementById('notification-center-live'),o=document.getElementById('notification-overlay-live');if(c)c.style.display='none';if(o)o.classList.remove('open')}
+document.getElementById('admin-notification-btn')?.addEventListener('click',()=>setTimeout(picaOpenLiveNotificationCenter,50));
+document.getElementById('sa-notification-btn')?.addEventListener('click',()=>setTimeout(picaOpenLiveNotificationCenter,50));
+document.getElementById('notification-live-close-btn')?.addEventListener('click',picaCloseLiveNotificationCenter);
+document.getElementById('notification-overlay-live')?.addEventListener('click',picaCloseLiveNotificationCenter);
+
+/* HIKVISION: comparação real Pica-Aqui ↔ terminal */
+function picaRenderHikCompare(){
+  const body=document.getElementById('hik-compare-body'),sum=document.getElementById('hik-compare-summary');
+  const mismatch=picaHikCompareRows.filter(r=>r.status!=='in_sync').length;
+  if(sum)sum.innerHTML=`<strong>${picaHikCompareRows.length} registo(s) verificados</strong> · ${picaHikCompareRows.length-mismatch} em conformidade · ${mismatch} diferença(s).`;
+  if(!body)return;
+  body.innerHTML=picaHikCompareRows.map(r=>{
+    const p=hikAccessPermissions.find(x=>String(x.id)===String(r.permission_id));
+    const d=hikAccessDevices.find(x=>String(x.id)===String(r.device_id));
+    const diff=Object.keys(r.differences||{}).filter(k=>k!=='extra').join(', ')||(
+      r.status==='missing_on_device'?'Falta no terminal':r.status==='disabled_but_present'?'Deveria estar removido':r.status==='extra_on_device'?'Existe apenas no terminal':'—'
+    );
+    const label={in_sync:'Em conformidade',missing_on_device:'Falta no terminal',different:'Diferente',disabled_but_present:'Acesso ainda ativo',extra_on_device:'Extra no terminal',error:'Erro'}[r.status]||r.status;
+    return `<tr><td>${r.permission_id&&r.status!=='in_sync'?`<input type="checkbox" class="hik-resync-check" value="${r.permission_id}">`:''}</td><td>${picaEsc(p?.person_name||r.device_snapshot?.name||r.external_person_no||'—')}</td><td>${picaEsc(d?.name||'Terminal')}</td><td><span class="badge ${r.status==='in_sync'?'active':'demo'}">${label}</span></td><td>${picaEsc(diff)}</td><td>${r.checked_at?new Date(r.checked_at).toLocaleString('pt-PT'):'Agora'}</td></tr>`;
+  }).join('')||'<tr><td colspan="6" style="text-align:center;padding:18px;">Sem resultados.</td></tr>';
+}
+async function picaCompareHikvision(){
+  if(!hikAccessAddon?.enabled)return showToast('O add-on de Controlo de Acessos não está ativo.',true);
+  const btn=document.getElementById('hik-compare-btn'); if(btn){btn.disabled=true;btn.textContent='A comparar…'}
+  try{
+    await loadAccessControlData();
+    const {data,error}=await supabaseClient.functions.invoke('compare-hikvision-access',{body:{institution_id:currentInstitutionId}});
+    if(error)throw error;if(!data?.ok)throw new Error(data?.error||'Falha na comparação.');
+    picaHikCompareRows=(data.devices||[]).flatMap(d=>(d.rows||[]).map(r=>({...r,device_id:d.device_id})));
+    picaRenderHikCompare();
+    const failed=(data.devices||[]).filter(d=>!d.ok); if(failed.length)showToast(`${failed.length} terminal(is) não responderam.`,true); else showToast('Comparação HIKVISION concluída.');
+  }catch(e){showToast('Erro na comparação: '+(e.message||e),true)}
+  finally{if(btn){btn.disabled=false;btn.textContent='Comparar configurações'}}
+}
+async function picaResyncSelected(){
+  const ids=[...document.querySelectorAll('.hik-resync-check:checked')].map(x=>x.value);
+  if(!ids.length)return showToast('Seleciona pelo menos uma diferença.',true);
+  let ok=0;
+  for(const id of ids){
+    try{const {data,error}=await supabaseClient.functions.invoke('sync-hikvision-access',{body:{permission_id:id}});if(!error&&data?.ok)ok++}catch(_){}
+  }
+  showToast(`${ok}/${ids.length} permissão(ões) reenviada(s).`);
+  await picaCompareHikvision();
+}
+document.getElementById('hik-compare-btn')?.addEventListener('click',picaCompareHikvision);
+document.getElementById('hik-resync-selected-btn')?.addEventListener('click',picaResyncSelected);
+document.getElementById('hik-diagnostics-btn')?.addEventListener('click',()=>picaRunHikvisionDiagnostics().then(()=>showToast('Diagnóstico concluído.')).catch(e=>showToast(e.message,true)));
+
+navigator.serviceWorker?.addEventListener('message',e=>{
+  if(e.data?.type==='OPEN_NOTIFICATION'&&e.data?.data?.target_page){
+    const target=e.data.data.target_page;
+    document.querySelector(`[data-nav="${target}"]`)?.click();
+  }
+});
+
+
+/* ===== ADD-ON ACCESS VISIBILITY + ADMIN LICENSE ROUTE FIX ===== */
+function picaMountAdminLicensePage(){
+  const licenses=document.getElementById('settings-licencas');
+  const main=document.querySelector('#admin-dashboard-screen .main-content');
+  if(licenses && main && licenses.parentElement!==main){
+    main.appendChild(licenses);
+  }
+}
+function picaOpenAdminLicenses(){
+  picaMountAdminLicensePage();
+  openAdminNavPage('licencas-admin');
+  renderAdminLicense();
+}
+window.picaOpenAdminLicenses=picaOpenAdminLicenses;
+
+async function picaRefreshAccessAddonGate(){
+  const enabled=await refreshAccessHistoryLicenseVisibility();
+  const btn=document.getElementById('settings-access-tab-btn');
+  if(btn) btn.hidden=!enabled;
+  return enabled;
+}
+
+window.addEventListener('load',()=>{
+  picaMountAdminLicensePage();
+  setTimeout(picaRefreshAccessAddonGate,1200);
+});
+
+document.addEventListener('click',e=>{
+  const legacy=e.target.closest('[data-settings-tab="licencas"]');
+  if(legacy){
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    picaOpenAdminLicenses();
+  }
+},true);
 
 </script>
 </body>
