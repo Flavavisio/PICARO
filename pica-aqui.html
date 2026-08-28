@@ -1694,6 +1694,101 @@ body:not(.access-addon-enabled) #hik-advanced-health-panel{
   display:none !important;
 }
 </style>
+
+<style id="pica-roster-generator-layout-fix">
+#roster-generator-drawer{
+  width:min(720px,calc(100vw - 18px)) !important;
+  max-width:720px !important;
+}
+#roster-generator-drawer .drawer-body{
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+}
+#roster-generator-drawer .grid-2{
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important;
+  gap:12px !important;
+}
+#roster-generator-drawer .field,
+#roster-generator-drawer input,
+#roster-generator-drawer select,
+#roster-generator-drawer textarea{
+  min-width:0 !important;
+  max-width:100% !important;
+  box-sizing:border-box !important;
+}
+#roster-generator-drawer #rg-shifts{
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+}
+#roster-generator-drawer .drawer-foot{
+  flex-wrap:wrap;
+}
+#roster-generator-drawer #rg-preview{
+  display:none !important;
+}
+#roster-proposal-modal{
+  width:min(580px,calc(100vw - 28px)) !important;
+  max-width:580px !important;
+  max-height:86dvh;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+#roster-proposal-modal .proposal-body{
+  padding:18px 20px;
+  overflow:auto;
+}
+#roster-proposal-modal .proposal-summary-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin:12px 0;
+}
+#roster-proposal-modal .proposal-stat{
+  border:1px solid var(--border);
+  background:var(--surface-alt);
+  border-radius:10px;
+  padding:11px 12px;
+}
+#roster-proposal-modal .proposal-stat strong{
+  display:block;
+  font-size:17px;
+  margin-bottom:3px;
+}
+#roster-proposal-modal .proposal-stat span{
+  color:var(--ink-faint);
+  font-size:11px;
+}
+#roster-proposal-modal .proposal-warning-list{
+  max-height:220px;
+  overflow:auto;
+  border:1px solid #f0d7a5;
+  background:#fff8eb;
+  border-radius:10px;
+  padding:10px 12px;
+}
+#roster-proposal-modal .proposal-warning-line{
+  font-size:12px;
+  line-height:1.45;
+  padding:4px 0;
+}
+#roster-proposal-modal .drawer-foot{
+  flex-shrink:0;
+}
+@media(max-width:700px){
+  #roster-generator-drawer{
+    width:100vw !important;
+    max-width:100vw !important;
+  }
+  #roster-generator-drawer .grid-2,
+  #roster-generator-drawer #rg-shifts{
+    grid-template-columns:1fr !important;
+  }
+  #roster-proposal-modal .proposal-summary-grid{
+    grid-template-columns:1fr 1fr;
+  }
+}
+</style>
+
 </head>
 <body>
 
@@ -2634,7 +2729,7 @@ body:not(.access-addon-enabled) #hik-advanced-health-panel{
           <div class="panel-body" style="padding-top:16px;">
             <table>
               <thead>
-                <tr><th>Colaborador</th><th>Equipa</th><th>Horário</th><th>Estado</th><th>Dias de férias</th><th>PIN</th><th></th></tr>
+                <tr><th>Colaborador</th><th>Equipa</th><th>Turno habitual</th><th>Estado</th><th>Dias de férias</th><th>PIN</th><th></th></tr>
               </thead>
               <tbody id="colab-table-body"></tbody>
             </table>
@@ -3497,8 +3592,11 @@ body:not(.access-addon-enabled) #hik-advanced-health-panel{
       <select class="select-input" id="f-team"></select>
     </div>
     <div class="field">
-      <label>Horário</label>
+      <label>Turno habitual</label>
       <select class="select-input" id="f-schedule"></select>
+      <div class="hint" style="font-size:11.5px;color:var(--ink-faint);margin-top:6px;">
+        É apenas a preferência/base do colaborador. Escolhe <strong>Flexível / sem turno fixo</strong> quando pode rodar entre vários turnos.
+      </div>
     </div>
     <div class="field">
       <label>Estado</label>
@@ -3518,6 +3616,7 @@ body:not(.access-addon-enabled) #hik-advanced-health-panel{
         <input type="text" id="f-pin" maxlength="4" pattern="[0-9]{4}" placeholder="0000">
         <button type="button" class="btn-mini" id="f-pin-generate">Gerar</button>
       </div>
+      <div class="hint" style="font-size:11.5px;color:var(--ink-faint);margin-top:6px;">Opcional. Se deixares vazio, o colaborador fica sem PIN até o definires.</div>
     </div>
     <div class="field">
       <label class="toggle-row">
@@ -3667,7 +3766,7 @@ body:not(.access-addon-enabled) #hik-advanced-health-panel{
 
 
 <div class="overlay" id="pica-alert-overlay" style="z-index:9998;"></div>
-<div class="modal" id="pica-alert-modal" style="z-index:9999;max-width:440px;">
+<div class="roster-modal" id="pica-alert-modal" style="z-index:9999;width:min(440px,calc(100vw - 28px));max-width:440px;">
   <div class="modal-head">
     <div>
       <h3 id="pica-alert-title">Aviso</h3>
@@ -3889,8 +3988,26 @@ body:not(.access-addon-enabled) #hik-advanced-health-panel{
   </div>
   <div class="drawer-foot">
     <button class="btn-secondary" id="roster-generator-cancel">Cancelar</button>
-    <button class="btn-outline" id="roster-generator-preview-btn">Gerar proposta</button>
-    <button class="btn-primary" id="roster-generator-apply-btn" disabled>Aplicar escala</button>
+    <button class="btn-primary" id="roster-generator-preview-btn">Gerar proposta</button>
+    <button id="roster-generator-apply-btn" type="button" hidden disabled>Aplicar escala</button>
+  </div>
+</div>
+
+<div class="overlay" id="roster-proposal-overlay" style="z-index:398;"></div>
+<div class="roster-modal" id="roster-proposal-modal" style="z-index:399;">
+  <div class="drawer-head">
+    <div>
+      <h3>Proposta de Escala</h3>
+      <div class="sub">Confirma o resultado antes de aplicar.</div>
+    </div>
+    <button class="drawer-close" id="roster-proposal-close">✕</button>
+  </div>
+  <div class="proposal-body">
+    <div id="roster-proposal-content"></div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn-secondary" id="roster-proposal-back">Voltar e ajustar</button>
+    <button class="btn-primary" id="roster-proposal-apply">Aplicar escala</button>
   </div>
 </div>
 
@@ -3916,6 +4033,7 @@ body:not(.access-addon-enabled) #hik-advanced-health-panel{
     <div id="rm-availability-warning" class="hint-chip" hidden></div>
   </div>
   <div class="drawer-foot">
+    <button class="btn-danger" id="roster-modal-delete-btn" hidden>Eliminar desta escala</button>
     <button class="btn-secondary" id="roster-modal-cancel-btn">Cancelar</button>
     <button class="btn-primary" id="roster-modal-save-btn">Guardar</button>
   </div>
@@ -6360,6 +6478,8 @@ function refreshAvatarPreview(){
 }
 
 function openColabDrawer(id){
+  picaClearGlobalActionState();
+  picaResetButton('drawer-save-btn','Guardar');
   editingEmployeeId = id || null;
   const emp = id ? employees.find(e=>e.id==id) : null;
   colabDrawerEmp = emp;
@@ -6371,7 +6491,7 @@ function openColabDrawer(id){
   document.getElementById('drawer-title').textContent = emp ? 'Editar colaborador' : 'Novo colaborador';
   document.getElementById('f-name').value = emp ? emp.name : '';
   document.getElementById('f-team').value = emp ? emp.team : teams[0].name;
-  document.getElementById('f-schedule').value = emp ? emp.schedule : shiftLabel(shifts[0]);
+  document.getElementById('f-schedule').value = (emp && emp.schedule && emp.schedule!=='—') ? emp.schedule : 'Flexível';
   document.getElementById('f-status').value = emp ? emp.status : 'ativo';
   document.getElementById('f-vacation').value = emp ? emp.vacation : 22;
   document.getElementById('f-pin').value = (emp && emp.pin) ? emp.pin : '';
@@ -6412,6 +6532,8 @@ document.getElementById('f-photo-remove-btn').addEventListener('click', ()=>{
 });
 
 function closeColabDrawer(){
+  picaResetButton('drawer-save-btn','Guardar');
+  picaClearGlobalActionState();
   document.getElementById('colab-drawer').classList.remove('open');
   document.getElementById('drawer-overlay').classList.remove('open');
   editingEmployeeId = null;
@@ -6469,7 +6591,7 @@ async function loadEmployeesFromSupabase(institutionId){
   }
   employees = (data||[]).map(row=>{
     const notes = row.notes || '';
-    const m = notes.match(/Horário:\s*([^\n]+)/);
+    const m = notes.match(/(?:Turno habitual|Horário):\s*([^\n]+)/i);
     return {
       id: row.id,
       profileId: row.profile_id || null,
@@ -6477,7 +6599,7 @@ async function loadEmployeesFromSupabase(institutionId){
       _supa: true,
       name: row.full_name,
       team: row.teams ? row.teams.name : '—',
-      schedule: m ? m[1] : '—',
+      schedule: m ? m[1] : 'Flexível',
       status: mapSupaStatusToLocal(row.status),
       vacation: (Number(row.vacation_days_total)||0) - (Number(row.vacation_days_used)||0),
       weeklyHours: Number(row.weekly_hours || 40),
@@ -6519,7 +6641,8 @@ async function saveColaboradorSupabase(formData){
     showToast('Não foi possível associar o colaborador à equipa selecionada.', true);
     return;
   }
-  const notes = `Horário: ${formData.schedule}
+  const normalizedSchedule = String(formData.schedule || 'Flexível').trim() || 'Flexível';
+  const notes = `Turno habitual: ${normalizedSchedule}
 Mobile: ${formData.mobileClockIn ? 'sim' : 'não'}
 GPS: ${formData.requireGPS ? 'sim' : 'não'}`;
 
@@ -6591,20 +6714,29 @@ GPS: ${formData.requireGPS ? 'sim' : 'não'}`;
       }catch(_){}
     }
 
-    await loadSupaTeamMap(currentInstitutionId);
-    await loadEmployeesFromSupabase(currentInstitutionId);
-    closeColabDrawer();
-    renderColaboradores();
-    renderEquipas();
-    populateTeamSelects();
+    const wasEditing = !!editingEmployeeId;
 
-    showToast(editingEmployeeId
+    // O colaborador já está gravado a partir deste ponto.
+    // Falhas de refresh não devem transformar um sucesso em "erro inesperado".
+    try{
+      await loadSupaTeamMap(currentInstitutionId);
+      await loadEmployeesFromSupabase(currentInstitutionId);
+    }catch(refreshErr){
+      console.warn('Colaborador gravado, mas o refresh falhou:', refreshErr);
+    }
+
+    closeColabDrawer();
+    try{ renderColaboradores(); }catch(_){}
+    try{ renderEquipas(); }catch(_){}
+    try{ populateTeamSelects(); }catch(_){}
+
+    showToast(wasEditing
       ? 'Colaborador atualizado com sucesso.'
       : 'Colaborador criado com sucesso.');
 
   } catch(err){
     console.error('Erro ao guardar colaborador:', err);
-    showToast('Erro ao guardar colaborador: ' + (err.message || 'tente novamente.'), true);
+    picaShowAlert(picaFriendlyError(err,'Não foi possível guardar o colaborador.'),{title:'Erro ao guardar colaborador'});
   } finally {
     if(btn){
       btn.disabled = false;
@@ -6619,8 +6751,9 @@ async function saveColaborador(){
 
   const pinInput = document.getElementById('f-pin').value.trim();
   const isEditingSupa = currentInstitutionId && editingEmployeeId;
-  // Em modo Supabase, PIN em branco ao editar significa "não alterar" (não dá para pré-preencher um hash).
-  const pin = pinInput || (isEditingSupa ? '' : String(Math.floor(1000+Math.random()*9000)));
+  // PIN é opcional. Em branco = não definir / não alterar.
+  // Só é criado quando o Admin escreve um PIN ou usa o botão "Gerar".
+  const pin = pinInput;
   if(pin && !/^[0-9]{4}$/.test(pin)){ showToast('O PIN deve ter exatamente 4 dígitos.', true); return; }
   if(pin && !currentInstitutionId){
     const pinTaken = employees.some(e=> e.pin===pin && e.id!=editingEmployeeId);
@@ -6634,7 +6767,7 @@ async function saveColaborador(){
   const data = {
     name,
     team: document.getElementById('f-team').value,
-    schedule: document.getElementById('f-schedule').value,
+    schedule: document.getElementById('f-schedule').value || 'Flexível',
     status: document.getElementById('f-status').value,
     vacation,
     pin,
@@ -6732,12 +6865,45 @@ function picaShowAlert(message, options={}){
   overlay.classList.add('open');
 }
 function picaCloseAlert(){
+  picaClearGlobalActionState?.();
   document.getElementById('pica-alert-modal')?.classList.remove('open');
   document.getElementById('pica-alert-overlay')?.classList.remove('open');
 }
 document.getElementById('pica-alert-close')?.addEventListener('click',picaCloseAlert);
 document.getElementById('pica-alert-ok')?.addEventListener('click',picaCloseAlert);
 document.getElementById('pica-alert-overlay')?.addEventListener('click',picaCloseAlert);
+
+
+/* ================= EDITOR / MODAL STATE RESET ================= */
+function picaResetButton(id, fallbackLabel){
+  const btn=document.getElementById(id);
+  if(!btn) return;
+  btn.disabled=false;
+  btn.classList.remove('is-loading');
+  btn.removeAttribute('aria-busy');
+  if(fallbackLabel) btn.textContent=fallbackLabel;
+}
+function picaResetCoreEditorButtons(){
+  picaResetButton('drawer-save-btn','Guardar');
+  picaResetButton('team-drawer-save-btn','Guardar');
+  picaResetButton('shift-drawer-save-btn','Guardar');
+  picaResetButton('roster-modal-save-btn','Guardar');
+  picaResetButton('user-drawer-save-btn','Criar conta');
+  picaResetButton('roster-generator-preview-btn','Gerar proposta');
+  const proposalApply=document.getElementById('roster-proposal-apply');
+  if(proposalApply){
+    proposalApply.classList.remove('is-loading');
+    proposalApply.removeAttribute('aria-busy');
+    if(generatedRosterProposal) proposalApply.disabled=false;
+  }
+}
+
+/* Ao fechar um editor nunca herdar um "loading" da utilização anterior. */
+document.addEventListener('transitionend',e=>{
+  if(e.target?.classList?.contains('drawer') || e.target?.classList?.contains('roster-modal')){
+    if(!e.target.classList.contains('open')) picaClearGlobalActionState();
+  }
+});
 
 /* ---------------- EQUIPAS ---------------- */
 function renderEquipas(){
@@ -6764,6 +6930,8 @@ function renderEquipas(){
 }
 
 function openTeamDrawer(name){
+  picaClearGlobalActionState();
+  picaResetButton('team-drawer-save-btn','Guardar');
   editingTeamName = name || null;
   const t = name ? teams.find(x=>x.name===name) : null;
   document.getElementById('team-drawer-title').textContent = t ? 'Editar equipa' : 'Nova equipa';
@@ -6775,6 +6943,8 @@ function openTeamDrawer(name){
   document.getElementById('team-drawer-overlay').classList.add('open');
 }
 function closeTeamDrawer(){
+  picaResetButton('team-drawer-save-btn','Guardar');
+  picaClearGlobalActionState();
   document.getElementById('team-drawer').classList.remove('open');
   document.getElementById('team-drawer-overlay').classList.remove('open');
   editingTeamName = null;
@@ -6891,9 +7061,13 @@ function shiftLabel(s){ return `${s.name} (${s.start}–${s.end})`; }
 
 function populateShiftSelect(){
   const sel = document.getElementById('f-schedule');
+  if(!sel) return;
   const current = sel.value;
-  sel.innerHTML = shifts.map(s=>`<option value="${shiftLabel(s)}">${shiftLabel(s)}</option>`).join('');
+  sel.innerHTML =
+    `<option value="Flexível">Flexível / sem turno fixo</option>` +
+    shifts.map(s=>`<option value="${shiftLabel(s)}">${shiftLabel(s)}</option>`).join('');
   if([...sel.options].some(o=>o.value===current)) sel.value = current;
+  else sel.value='Flexível';
 }
 
 function renderTurnos(){
@@ -6927,6 +7101,8 @@ function renderTurnos(){
 }
 
 function openShiftDrawer(id){
+  picaClearGlobalActionState();
+  picaResetButton('shift-drawer-save-btn','Guardar');
   editingShiftId = id || null;
   const s = id ? shifts.find(x=>x.id==id) : null;
   document.getElementById('shift-drawer-title').textContent = s ? 'Editar turno' : 'Novo turno';
@@ -6953,6 +7129,8 @@ document.getElementById('sf-start').addEventListener('input', refreshShiftOverni
 document.getElementById('sf-end').addEventListener('input', refreshShiftOvernightHint);
 
 function closeShiftDrawer(){
+  picaResetButton('shift-drawer-save-btn','Guardar');
+  picaClearGlobalActionState();
   document.getElementById('shift-drawer').classList.remove('open');
   document.getElementById('shift-drawer-overlay').classList.remove('open');
   editingShiftId = null;
@@ -6988,7 +7166,7 @@ async function saveShift(){
   const start = document.getElementById('sf-start').value;
   const end = document.getElementById('sf-end').value;
   const color = document.getElementById('sf-color').value;
-  if(!name || !start || !end){ showToast('Preencha nome, início e fim do turno.', true); return; }
+  if(!name || !start || !end){ picaShowAlert('Preenche o nome, a hora de início e a hora de fim do turno.',{title:'Faltam dados do turno'}); return; }
 
   if(currentInstitutionId){
     const btn=document.getElementById('shift-drawer-save-btn');
@@ -7012,7 +7190,7 @@ async function saveShift(){
       showToast(editingShiftId?'Turno atualizado no sistema.':'Turno criado no sistema.');
     } catch(err){
       console.error('Erro ao guardar turno:',err);
-      showToast('Erro ao gravar turno: ' + (err.message||'tente novamente.'), true);
+      picaShowAlert(picaFriendlyError(err,'Não foi possível guardar o turno.'),{title:'Erro ao guardar turno'});
     } finally {
       if(btn){btn.disabled=false;btn.textContent=oldText;}
     }
@@ -7039,7 +7217,7 @@ async function saveShift(){
 
 function deleteShift(id){
   const s = shifts.find(x=>String(x.id)===String(id));
-  if(!s){ showToast('Turno não encontrado. Atualiza a página e tenta novamente.', true); return; }
+  if(!s){ picaShowAlert('Este turno já não está disponível na lista atual. Atualiza os dados e tenta novamente.',{title:'Turno não encontrado'}); return; }
   const label = shiftLabel(s);
   const linkedEmployees = employees.filter(e=>e.schedule===label).length;
 
@@ -7063,7 +7241,7 @@ function deleteShift(id){
           showToast('Turno eliminado. O histórico foi mantido.');
         } catch(err){
           console.error('Erro ao eliminar turno:',err);
-          showToast('Erro ao eliminar turno: ' + (err.message||'tente novamente.'), true);
+          picaShowAlert(picaFriendlyError(err,'Não foi possível eliminar o turno.'),{title:'Erro ao eliminar turno'});
         }
         return;
       }
@@ -7339,6 +7517,8 @@ function hasMinimumRest(empId, ds, shift, proposalEntries, minRestHours){
 }
 
 async function openRosterGenerator(){
+  picaClearGlobalActionState();
+  picaResetButton('roster-generator-preview-btn','Gerar proposta');
   try{
     if(currentInstitutionId){
       await Promise.all([
@@ -7379,6 +7559,9 @@ async function openRosterGenerator(){
   }
 }
 function closeRosterGenerator(){
+  closeRosterProposalModal();
+  picaClearGlobalActionState?.();
+  picaResetButton?.('roster-generator-preview-btn','Gerar proposta');
   document.getElementById('roster-generator-drawer').classList.remove('open');
   document.getElementById('roster-generator-overlay').classList.remove('open');
   generatedRosterProposal=null;
@@ -7514,6 +7697,13 @@ function buildRosterProposal(){
             const pb=picaIsNightShift(b)?(empHist.nights+empProp.nights):0;
             if(pa!==pb) return pa-pb;
           }
+          // Turno habitual é preferência suave, nunca uma obrigação.
+          const habitual=String(emp.schedule||'');
+          if(habitual && habitual!=='Flexível' && habitual!=='—'){
+            const aPreferred=shiftLabel(a)===habitual;
+            const bPreferred=shiftLabel(b)===habitual;
+            if(aPreferred!==bPreferred) return aPreferred?-1:1;
+          }
           return 0;
         });
 
@@ -7579,13 +7769,37 @@ function buildRosterProposal(){
   return {proposal,warnings,targetEmployees,replaceExisting,usableShifts,workDays,minRest,respectHours};
 }
 
+
+function openRosterProposalModal(){
+  document.getElementById('roster-proposal-modal')?.classList.add('open');
+  document.getElementById('roster-proposal-overlay')?.classList.add('open');
+}
+function closeRosterProposalModal(){
+  document.getElementById('roster-proposal-modal')?.classList.remove('open');
+  document.getElementById('roster-proposal-overlay')?.classList.remove('open');
+  picaClearGlobalActionState?.();
+  picaResetButton?.('roster-generator-preview-btn','Gerar proposta');
+  const proposalApply=document.getElementById('roster-proposal-apply');
+  if(proposalApply){
+    proposalApply.classList.remove('is-loading');
+    proposalApply.removeAttribute('aria-busy');
+    proposalApply.textContent='Aplicar escala';
+  }
+}
+
 function previewRosterGenerator(){
-  const preview=document.getElementById('rg-preview');
   const applyBtn=document.getElementById('roster-generator-apply-btn');
+  const proposalApplyBtn=document.getElementById('roster-proposal-apply');
+  const proposalBackBtn=document.getElementById('roster-proposal-back');
+  const proposalCloseBtn=document.getElementById('roster-proposal-close');
+  const proposalOverlay=document.getElementById('roster-proposal-overlay');
+  const modalApply=document.getElementById('roster-proposal-apply');
+  const content=document.getElementById('roster-proposal-content');
 
   try{
-    preview.innerHTML='<div class="rg-preview-card"><div class="rg-preview-line">A gerar proposta…</div></div>';
-    applyBtn.disabled=true;
+    if(applyBtn) applyBtn.disabled=true;
+    if(modalApply){ modalApply.disabled=true; modalApply.textContent='A preparar…'; }
+    if(content) content.innerHTML='<div class="hint-chip">A gerar proposta…</div>';
 
     const result=buildRosterProposal();
     const workEntries=result.proposal.filter(x=>!x.isDayOff);
@@ -7593,7 +7807,13 @@ function previewRosterGenerator(){
 
     if(!workEntries.length){
       generatedRosterProposal=null;
-      preview.innerHTML=`<div class="rg-preview-card rg-warning"><div class="rg-preview-title">Não foi possível gerar turnos</div><div class="rg-preview-line">Verifica se existem colaboradores ativos, equipas, turnos selecionados e se férias/ausências ou limites semanais não estão a bloquear a proposta.</div></div>`;
+      if(content) content.innerHTML=`
+        <div class="rg-preview-card rg-warning">
+          <div class="rg-preview-title">Não foi possível gerar turnos</div>
+          <div class="rg-preview-line">Verifica colaboradores ativos, turnos selecionados, dias de trabalho, férias/ausências, indisponibilidades e limites de horas.</div>
+        </div>`;
+      if(modalApply){ modalApply.disabled=true; modalApply.textContent='Aplicar escala'; }
+      openRosterProposalModal();
       return;
     }
 
@@ -7606,32 +7826,47 @@ function previewRosterGenerator(){
 
     const perShift=result.usableShifts.map(s=>{
       const count=workEntries.filter(r=>String(r.shiftId)===String(s.id)).length;
-      return `${analyticsEsc(s.name)}: ${count}`;
-    }).join(' · ');
+      return `<div class="rg-preview-line"><strong>${analyticsEsc(s.name)}</strong>: ${count} turno(s)</div>`;
+    }).join('');
 
-    preview.innerHTML=`
+    const uniqueEmployees=new Set(workEntries.map(r=>String(r.employeeId))).size;
+
+    if(content) content.innerHTML=`
       <div class="rg-preview-card rg-good">
         <div class="rg-preview-title">Proposta pronta</div>
-        <div class="rg-preview-line">${result.targetEmployees.length} colaborador(es) · ${workEntries.length} turno(s) · ${offEntries.length} folga(s)</div>
-        <div class="rg-preview-line">Carga total: ${formatDurationMinutes(totalMinutes)}</div>
-        <div class="rg-preview-line">${perShift||'Sem distribuição por turno'}</div>
+        <div class="proposal-summary-grid">
+          <div class="proposal-stat"><strong>${uniqueEmployees}</strong><span>Colaboradores escalados</span></div>
+          <div class="proposal-stat"><strong>${workEntries.length}</strong><span>Turnos atribuídos</span></div>
+          <div class="proposal-stat"><strong>${offEntries.length}</strong><span>Folgas geradas</span></div>
+        </div>
+        <div class="rg-preview-line"><strong>Carga total:</strong> ${formatDurationMinutes(totalMinutes)}</div>
+        <div style="margin-top:10px;">${perShift||'<div class="rg-preview-line">Sem distribuição por turno.</div>'}</div>
       </div>
       ${result.warnings.length?`
-        <div class="rg-preview-card rg-warning">
-          <div class="rg-preview-title">Avisos (${result.warnings.length})</div>
-          ${result.warnings.slice(0,12).map(w=>`<div class="rg-preview-line">⚠ ${analyticsEsc(w)}</div>`).join('')}
+        <div style="margin-top:14px;">
+          <div class="rg-preview-title" style="margin-bottom:7px;">Avisos (${result.warnings.length})</div>
+          <div class="proposal-warning-list">
+            ${result.warnings.map(w=>`<div class="proposal-warning-line">⚠ ${analyticsEsc(w)}</div>`).join('')}
+          </div>
         </div>`:
-        `<div class="rg-preview-card rg-good"><div class="rg-preview-line">✓ Sem conflitos detetados.</div></div>`
+        `<div class="rg-preview-card rg-good" style="margin-top:14px;"><div class="rg-preview-line">✓ Sem conflitos detetados.</div></div>`
       }`;
 
-    applyBtn.disabled=false;
+    if(applyBtn) applyBtn.disabled=false;
+    if(modalApply){ modalApply.disabled=false; modalApply.textContent='Aplicar escala'; }
+    openRosterProposalModal();
 
   }catch(err){
     console.error('Erro ao gerar proposta:',err);
     generatedRosterProposal=null;
-    applyBtn.disabled=true;
-    preview.innerHTML=`<div class="rg-preview-card rg-warning"><div class="rg-preview-title">Erro</div><div class="rg-preview-line">⚠ ${analyticsEsc(err.message||'Não foi possível gerar a escala.')}</div></div>`;
-    showToast('Erro ao gerar proposta: '+(err.message||''),true);
+    if(applyBtn) applyBtn.disabled=true;
+    if(content) content.innerHTML=`
+      <div class="rg-preview-card rg-warning">
+        <div class="rg-preview-title">Não foi possível gerar a proposta</div>
+        <div class="rg-preview-line">⚠ ${analyticsEsc(picaFriendlyError(err,'Não foi possível gerar a escala.'))}</div>
+      </div>`;
+    if(modalApply){ modalApply.disabled=true; modalApply.textContent='Aplicar escala'; }
+    openRosterProposalModal();
   }
 }
 
@@ -7641,7 +7876,7 @@ async function applyGeneratedRoster(){
     return;
   }
 
-  const btn=document.getElementById('roster-generator-apply-btn');
+  const btn=document.getElementById('roster-proposal-apply') || document.getElementById('roster-generator-apply-btn');
   const old=btn.textContent;
   btn.disabled=true;
   btn.textContent='A aplicar…';
@@ -7682,13 +7917,14 @@ async function applyGeneratedRoster(){
     }
 
     const total=proposal.filter(x=>!x.isDayOff).length;
+    closeRosterProposalModal();
     closeRosterGenerator();
     generatedRosterProposal=null;
     showToast(`Escala aplicada com sucesso — ${total} turno(s) gravado(s).`);
 
   }catch(err){
     console.error('Erro ao aplicar escala gerada:',err);
-    showToast('Erro ao aplicar escala: '+(err.message||''),true);
+    picaShowAlert(picaFriendlyError(err,'Não foi possível aplicar a proposta de escala.'),{title:'Erro ao aplicar escala'});
   }finally{
     btn.disabled=false;
     btn.textContent=old;
@@ -7799,6 +8035,8 @@ function flashRosterCells(cellKeys){
 }
 
 function openRosterModal(empId, ds){
+  picaClearGlobalActionState();
+  picaResetButton('roster-modal-save-btn','Guardar');
   const emp = employees.find(e=>String(e.id)===String(empId));
   if(!emp || emp.status === 'suspenso') return;
 
@@ -7822,6 +8060,11 @@ function openRosterModal(empId, ds){
     : '__OFF__';
 
   document.getElementById('rm-notes').value = entry?.notes || '';
+  const deleteBtn=document.getElementById('roster-modal-delete-btn');
+  if(deleteBtn){
+    deleteBtn.hidden=!entry;
+    deleteBtn.disabled=!entry;
+  }
 
   const warning = document.getElementById('rm-availability-warning');
   warning.hidden = !unavailableReason;
@@ -7861,6 +8104,10 @@ function openRosterModal(empId, ds){
   document.getElementById('roster-modal-overlay').classList.add('open');
 }
 function closeRosterModal(){
+  picaResetButton('roster-modal-save-btn','Guardar');
+  const deleteBtn=document.getElementById('roster-modal-delete-btn');
+  if(deleteBtn){ deleteBtn.hidden=true; deleteBtn.disabled=false; deleteBtn.textContent='Eliminar desta escala'; }
+  picaClearGlobalActionState();
   document.getElementById('roster-modal').classList.remove('open');
   document.getElementById('roster-modal-overlay').classList.remove('open');
   rosterModalContext = null;
@@ -7975,6 +8222,55 @@ async function supaUpsertRoster(employeeId, ds, shiftTypeId, options={}){
   if(error) throw error;
 }
 
+
+async function supaDeleteRosterEntry(employeeId, ds){
+  const {error}=await supabaseClient
+    .from('roster_entries')
+    .delete()
+    .eq('institution_id',currentInstitutionId)
+    .eq('employee_id',employeeId)
+    .eq('work_date',ds);
+  if(error) throw error;
+}
+function picaQueueRosterDeleteOffline(employeeId,date){
+  const q=picaOfflineOps();
+  q.push({id:crypto.randomUUID(),type:'roster_delete',createdAt:new Date().toISOString(),employeeId,date});
+  localStorage.setItem(PICA_OFFLINE_OPS_KEY,JSON.stringify(q));
+}
+async function deleteCurrentRosterEntry(){
+  if(!rosterModalContext) return;
+  const {employeeId,date}=rosterModalContext;
+  const entry=getRosterEntry(employeeId,date);
+  if(!entry){
+    closeRosterModal();
+    return;
+  }
+  const emp=employees.find(e=>String(e.id)===String(employeeId));
+  const ok=confirm(`Eliminar ${entry.isDayOff?'a folga':'o turno'} de ${emp?.name||'este colaborador'} em ${date.split('-').reverse().join('/')}?\n\nA célula ficará vazia.`);
+  if(!ok) return;
+
+  const btn=document.getElementById('roster-modal-delete-btn');
+  if(btn){btn.disabled=true;btn.textContent='A eliminar…';}
+  try{
+    if(currentInstitutionId){
+      if(!navigator.onLine){
+        picaQueueRosterDeleteOffline(employeeId,date);
+      }else{
+        await supaDeleteRosterEntry(employeeId,date);
+      }
+    }
+    rosterEntries=rosterEntries.filter(r=>!(String(r.employeeId)===String(employeeId)&&r.date===date));
+    closeRosterModal();
+    renderEscalas();
+    picaSaveOfflineSnapshot?.();
+    showToast(navigator.onLine?'Registo removido da escala.':'Removido neste dispositivo. Será sincronizado quando voltar a ter Internet.');
+  }catch(err){
+    console.error('Erro ao eliminar da escala:',err);
+    if(btn){btn.disabled=false;btn.textContent='Eliminar desta escala';}
+    picaShowAlert(picaFriendlyError(err,'Não foi possível remover este registo da escala.'),{title:'Erro ao eliminar da escala'});
+  }
+}
+
 async function saveRosterModal(){
   if(!rosterModalContext) return;
   const {employeeId, date} = rosterModalContext;
@@ -8064,7 +8360,7 @@ async function saveRosterModal(){
       );
     } catch(err){
       console.error(err);
-      showToast('Erro ao gravar escala: ' + (err.message||'tente novamente.'), true);
+      picaShowAlert(picaFriendlyError(err,'Não foi possível guardar a escala.'),{title:'Erro ao guardar escala'});
     }
     return;
   }
@@ -8079,6 +8375,7 @@ document.getElementById('roster-modal-close-btn').addEventListener('click', clos
 document.getElementById('roster-modal-cancel-btn').addEventListener('click', closeRosterModal);
 document.getElementById('roster-modal-overlay').addEventListener('click', closeRosterModal);
 document.getElementById('roster-modal-save-btn').addEventListener('click', saveRosterModal);
+document.getElementById('roster-modal-delete-btn')?.addEventListener('click', deleteCurrentRosterEntry);
 
 /* ---------------- ESCALAS: ARRASTAR PARA TROCAR TURNOS ---------------- */
 async function performRosterSwap(empA, empB, ds){
@@ -8901,6 +9198,8 @@ async function renderUsers(){
 }
 
 function openUserDrawer(employeeId){
+  picaClearGlobalActionState();
+  picaResetButton('user-drawer-save-btn','Criar conta');
   const emp = employees.find(e=>String(e.id)===String(employeeId));
   if(!emp){
     showToast('Colaborador não encontrado.', true);
@@ -8915,6 +9214,8 @@ function openUserDrawer(employeeId){
   document.getElementById('user-drawer-overlay').classList.add('open');
 }
 function closeUserDrawer(){
+  picaResetButton('user-drawer-save-btn','Criar conta');
+  picaClearGlobalActionState();
   document.getElementById('user-drawer').classList.remove('open');
   document.getElementById('user-drawer-overlay').classList.remove('open');
 }
@@ -11993,6 +12294,22 @@ async function saveHikvisionMappings(){
     applyBtn.dataset.wired='1';
     applyBtn.addEventListener('click',applyGeneratedRoster);
   }
+  if(proposalApplyBtn && !proposalApplyBtn.dataset.wired){
+    proposalApplyBtn.dataset.wired='1';
+    proposalApplyBtn.addEventListener('click',applyGeneratedRoster);
+  }
+  if(proposalBackBtn && !proposalBackBtn.dataset.wired){
+    proposalBackBtn.dataset.wired='1';
+    proposalBackBtn.addEventListener('click',()=>{ closeRosterProposalModal(); picaClearGlobalActionState?.(); });
+  }
+  if(proposalCloseBtn && !proposalCloseBtn.dataset.wired){
+    proposalCloseBtn.dataset.wired='1';
+    proposalCloseBtn.addEventListener('click',()=>{ closeRosterProposalModal(); picaClearGlobalActionState?.(); });
+  }
+  if(proposalOverlay && !proposalOverlay.dataset.wired){
+    proposalOverlay.dataset.wired='1';
+    proposalOverlay.addEventListener('click',closeRosterProposalModal);
+  }
 })();
 
 
@@ -13076,13 +13393,18 @@ document.getElementById('pwa-update-btn')?.addEventListener('click',()=>{
   picaWaitingServiceWorker.postMessage({type:'SKIP_WAITING'});
 });
 
-/* ================= GLOBAL ACTION LOADING / DOUBLE-TAP GUARD ================= */
+/* ================= GLOBAL ACTION LOADING / DOUBLE-TAP GUARD — SAFE V2 =================
+   Regra: nunca desativar um botão na fase de captura.
+   O próprio handler de cada ação controla disabled/estado. Este guard apenas dá feedback visual
+   e evita cliques repetidos muito rápidos sem impedir o primeiro evento.
+*/
 const PICA_LOADING_ACTION_RE = /(guardar|gravar|salvar|criar|gerar|aplicar|emitir|enviar|sincronizar|atualizar|registar|aprovar|rejeitar|eliminar|apagar|renovar|copiar|importar|exportar|testar|emparelhar)/i;
 let picaNetworkPending = 0;
 let picaInteractionPending = 0;
 let picaLoadingSourceButton = null;
-let picaLoadingMinTimer = null;
-let picaInteractionStartedAt = 0;
+let picaLoadingWatchdog = null;
+let picaLastActionAt = 0;
+let picaLastActionButton = null;
 
 function picaLoadingMessageFromButton(btn){
   const text=(btn?.textContent||'').trim().toLowerCase();
@@ -13098,106 +13420,125 @@ function picaLoadingMessageFromButton(btn){
   return 'A processar…';
 }
 
+function picaClearGlobalActionState(){
+  picaInteractionPending=0;
+  if(picaLoadingSourceButton){
+    picaLoadingSourceButton.classList.remove('is-loading');
+    picaLoadingSourceButton.removeAttribute('aria-busy');
+  }
+  picaLoadingSourceButton=null;
+  const overlay=document.getElementById('global-action-loading');
+  if(overlay) overlay.hidden=true;
+  document.documentElement.style.cursor='';
+  clearTimeout(picaLoadingWatchdog);
+  picaLoadingWatchdog=null;
+}
+
 function picaUpdateGlobalLoading(){
   const overlay=document.getElementById('global-action-loading');
   if(!overlay) return;
-  const busy=(picaNetworkPending>0 || picaInteractionPending>0);
+
+  // Pedidos de fundo (polling, notificações, Hikvision) nunca bloqueiam a interface.
+  const busy=picaInteractionPending>0;
   overlay.hidden=!busy;
   document.documentElement.style.cursor=busy?'progress':'';
+
   if(!busy && picaLoadingSourceButton){
     picaLoadingSourceButton.classList.remove('is-loading');
-    picaLoadingSourceButton.disabled=false;
+    picaLoadingSourceButton.removeAttribute('aria-busy');
     picaLoadingSourceButton=null;
   }
 }
 
 function picaStartInteractionLoading(btn){
   picaInteractionPending=1;
-  picaInteractionStartedAt=Date.now();
   picaLoadingSourceButton=btn||null;
 
   if(btn){
     btn.classList.add('is-loading');
-    btn.disabled=true;
+    btn.setAttribute('aria-busy','true');
+    // IMPORTANTE: não fazemos btn.disabled=true aqui.
+    // Alguns handlers são executados depois deste listener e precisam do botão ativo.
   }
 
   const label=document.getElementById('global-loading-text');
   if(label) label.textContent=picaLoadingMessageFromButton(btn);
 
-  clearTimeout(picaLoadingMinTimer);
-  picaLoadingMinTimer=setTimeout(()=>{
-    /*
-      Se não arrancou qualquer pedido de rede, libertamos a ação local.
-      Se arrancou, o fetch tracker mantém o overlay até terminar.
-    */
-    picaInteractionPending=0;
-    picaUpdateGlobalLoading();
-  },320);
+  clearTimeout(picaLoadingWatchdog);
+  picaLoadingWatchdog=setTimeout(()=>{
+    // Nunca deixar a UI presa por uma exceção, Edge Function ou pedido interrompido.
+    picaClearGlobalActionState();
+  },15000);
 
   picaUpdateGlobalLoading();
+
+  // Ações locais sem rede libertam rapidamente o overlay.
+  setTimeout(()=>{
+    if(picaNetworkPending===0 && picaInteractionPending){
+      picaClearGlobalActionState();
+    }
+  },350);
 }
 
 function picaFinishInteractionLoading(){
-  const elapsed=Date.now()-picaInteractionStartedAt;
-  const wait=Math.max(0,260-elapsed);
-  setTimeout(()=>{
-    picaInteractionPending=0;
-    picaUpdateGlobalLoading();
-  },wait);
+  if(picaNetworkPending===0) picaClearGlobalActionState();
 }
 
-/* Captura ações antes dos handlers normais: o overlay impede segundo toque. */
+/* Listener em BUBBLE, depois do onclick/handler real do botão.
+   Assim o primeiro clique é sempre entregue à funcionalidade. */
 document.addEventListener('click',e=>{
-  const btn=e.target.closest('button');
-  if(!btn || btn.disabled) return;
+  const btn=e.target.closest?.('button');
+  if(!btn) return;
 
   const raw=`${btn.id||''} ${btn.textContent||''} ${btn.getAttribute('title')||''}`;
   const excluded=/^(ponto-prev-btn|ponto-next-btn|escala-prev-btn|escala-next-btn|time-bank-prev-btn|time-bank-next-btn)$/;
   if(excluded.test(btn.id||'')) return;
+  if(!PICA_LOADING_ACTION_RE.test(raw)) return;
 
-  if(PICA_LOADING_ACTION_RE.test(raw)){
-    picaStartInteractionLoading(btn);
-  }
-},true);
+  const now=Date.now();
 
-/* Track de todos os pedidos fetch (Supabase, Edge Functions, etc.). */
-(function installPicaFetchTracker(){
+  // Não iniciar outro feedback visual para o mesmo botão em duplo toque imediato.
+  // Não bloqueia o evento — o handler real mantém o controlo da ação.
+  if(picaLastActionButton===btn && now-picaLastActionAt<450) return;
+  picaLastActionButton=btn;
+  picaLastActionAt=now;
+
+  picaStartInteractionLoading(btn);
+},false);
+
+/* Track de fetch sem bloquear pedidos de fundo. */
+(function installPicaFetchTrackerSafe(){
   if(window.__picaFetchTrackerInstalled) return;
   window.__picaFetchTrackerInstalled=true;
   const originalFetch=window.fetch.bind(window);
 
   window.fetch=async function(...args){
     picaNetworkPending++;
-    picaUpdateGlobalLoading();
-
     try{
       return await originalFetch(...args);
     }finally{
       picaNetworkPending=Math.max(0,picaNetworkPending-1);
-      if(picaNetworkPending===0){
-        picaFinishInteractionLoading();
-      }else{
-        picaUpdateGlobalLoading();
+      if(picaNetworkPending===0 && picaInteractionPending){
+        setTimeout(picaFinishInteractionLoading,120);
       }
     }
   };
 })();
 
-/* Segurança extra: nunca deixar overlay preso por navegação/erro não tratado. */
-window.addEventListener('pageshow',()=>{
-  picaNetworkPending=0;
-  picaInteractionPending=0;
-  picaUpdateGlobalLoading();
+window.addEventListener('pageshow',picaClearGlobalActionState);
+window.addEventListener('focus',()=>{
+  if(picaInteractionPending && picaNetworkPending===0) picaClearGlobalActionState();
 });
 window.addEventListener('unhandledrejection',()=>{
   setTimeout(()=>{
-    if(picaNetworkPending===0){
-      picaInteractionPending=0;
-      picaUpdateGlobalLoading();
-    }
-  },500);
+    if(picaNetworkPending===0) picaClearGlobalActionState();
+  },300);
 });
-
+window.addEventListener('error',()=>{
+  setTimeout(()=>{
+    if(picaNetworkPending===0) picaClearGlobalActionState();
+  },300);
+});
 
 document.getElementById('admin-notification-btn')?.addEventListener('click',openNotificationCenter);
 document.getElementById('sa-notification-btn')?.addEventListener('click',openNotificationCenter);
@@ -13501,6 +13842,7 @@ async function picaFlushOfflineOps(){
   for(const op of q){
     try{
       if(op.type==='roster_upsert') await supaUpsertRoster(op.employeeId,op.date,op.shiftId,op.opts||{});
+      else if(op.type==='roster_delete') await supaDeleteRosterEntry(op.employeeId,op.date);
     }catch(e){remaining.push(op)}
   }
   localStorage.setItem(PICA_OFFLINE_OPS_KEY,JSON.stringify(remaining));
@@ -13640,6 +13982,22 @@ document.addEventListener('click',e=>{
     picaOpenAdminLicenses();
   }
 },true);
+
+
+
+function picaCloseTopDialogOnEscape(e){
+  if(e.key!=='Escape') return;
+  if(document.getElementById('pica-alert-modal')?.classList.contains('open')) return picaCloseAlert();
+  if(document.getElementById('roster-proposal-modal')?.classList.contains('open')) return closeRosterProposalModal();
+  if(document.getElementById('danger-modal')?.classList.contains('open')) return closeDangerModal();
+  if(document.getElementById('roster-modal')?.classList.contains('open')) return closeRosterModal();
+  if(document.getElementById('shift-drawer')?.classList.contains('open')) return closeShiftDrawer();
+  if(document.getElementById('team-drawer')?.classList.contains('open')) return closeTeamDrawer();
+  if(document.getElementById('colab-drawer')?.classList.contains('open')) return closeColabDrawer();
+  if(document.getElementById('user-drawer')?.classList.contains('open')) return closeUserDrawer();
+  if(document.getElementById('roster-generator-drawer')?.classList.contains('open')) return closeRosterGenerator();
+}
+document.addEventListener('keydown',picaCloseTopDialogOnEscape);
 
 </script>
 </body>
