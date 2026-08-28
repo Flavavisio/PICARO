@@ -1832,12 +1832,12 @@ body:not(.access-addon-enabled) #hik-advanced-health-panel{
   <div class="login-panel">
     <div class="login-card">
       <h2>Portal do Parceiro</h2>
-      <p class="sub">Aceda com o seu email e palavra-passe.</p>
+      <p class="sub">Aceda com o seu email ou utilize a demonstração.</p>
 
       <form id="credential-form">
         <div class="field">
-          <label>Email</label>
-          <input type="email" id="email-input" placeholder="O seu email de acesso" autocomplete="username" required>
+          <label>Email ou utilizador</label>
+          <input type="text" id="email-input" placeholder="Email ou demopicaaqui" autocomplete="username" required>
         </div>
         <div class="field">
           <label>Palavra-passe</label>
@@ -1848,6 +1848,13 @@ body:not(.access-addon-enabled) #hik-advanced-health-panel{
         </div>
         <button type="submit" class="btn-primary" id="login-submit-btn">Entrar</button>
       </form>
+
+
+      <div class="hint-chip" id="public-demo-hint" style="margin-top:14px;display:block;">
+        <strong>Demo Hospital</strong><br>
+        Utilizador: <code>demopicaaqui</code> · Palavra-passe: <code>demo</code><br>
+        <span style="font-size:11px;">Dados fictícios. As alterações da demo são reiniciadas ao voltar a entrar.</span>
+      </div>
 
       <div class="login-divider"><span>ou</span></div>
       <button class="btn-outline" id="public-kiosk-btn" style="width:100%;">🖥 Aceder ao Quiosque</button>
@@ -2579,6 +2586,11 @@ body:not(.access-addon-enabled) #hik-advanced-health-panel{
 
 <!-- ================= ADMIN DA INSTITUIÇÃO DASHBOARD ================= -->
 <div id="admin-dashboard-screen" hidden>
+
+<div id="pica-demo-banner" hidden style="position:sticky;top:0;z-index:80;background:#FFF4D6;border-bottom:1px solid #E8C66B;padding:8px 18px;font-size:12px;color:#6F5311;">
+  <strong>DEMONSTRAÇÃO · Hospital Santa Aurora</strong> — todos os dados são fictícios e as alterações são temporárias.
+</div>
+
   <div class="sidebar-overlay" id="admin-sidebar-overlay"></div>
   <aside class="sidebar" id="admin-sidebar">
     <div class="brand"><div class="brand-mark"></div>Pica-Aqui</div>
@@ -4335,9 +4347,13 @@ const SUPABASE_URL = 'https://meuojyxmqpbeolvksnii.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ldW9qeXhtcXBiZW9sdmtzbmlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQxNDgxMjQsImV4cCI6MjA5OTcyNDEyNH0._u6AJZ6TefOnvy2Qc2MC-f_lqzdrFaadg6dIM_CI1Vo';
 let supabaseClient = null;
 try {
-  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  if(window.supabase?.createClient){
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }else{
+    console.warn('Cliente Supabase indisponível. Algumas funções online ficarão desativadas até a biblioteca carregar.');
+  }
 } catch(e) {
-  console.warn('sistema client não inicializado:', e);
+  console.warn('Cliente Supabase não inicializado:', e);
 }
 
 /* ---------------- ESTADO DA APLICAÇÃO (SUPABASE) ---------------- */
@@ -6265,8 +6281,10 @@ function renderAdminKpis(){
   const present = teams.reduce((s,t)=>s+t.present,0);
   const coverage = Math.round((present/scheduled)*100);
   const understaffed = teams.filter(t=>t.present < t.scheduled).length;
-  const overtimeHrs = 6.5;
-  const pendingRequests = 5;
+  const overtimeHrs = isDemoMode ? 4.5 : 6.5;
+  const pendingRequests = isDemoMode
+    ? vacationRequests.filter(r=>r.status==='pendente').length + absenceRequests.filter(r=>r.status==='pendente').length
+    : 5;
 
   const cards = [
     {label:"Pessoas Escaladas Hoje", value:scheduled, delta:"turno atual", cls:"flat", spark:[20,22,24,25,23,scheduled], color:"#145C54"},
@@ -6424,7 +6442,7 @@ function renderColaboradores(){
     (!teamFilter || e.team === teamFilter) && (!statusFilter || e.status === statusFilter)
   );
 
-  const sourceNote = currentInstitutionId ? ' · dados sincronizados ☁' : '';
+  const sourceNote = currentInstitutionId ? ' · dados sincronizados ☁' : (isDemoMode ? ' · demonstração' : '');
   document.getElementById('colab-count-sub').textContent = `${employees.length} colaboradores · ${filtered.length} apresentados${sourceNote}`;
 
   document.getElementById('colab-table-body').innerHTML = filtered.map(e=>`
@@ -7071,7 +7089,7 @@ function populateShiftSelect(){
 }
 
 function renderTurnos(){
-  const sourceNote = currentInstitutionId ? ' · sistema ☁' : '';
+  const sourceNote = currentInstitutionId ? ' · sistema ☁' : (isDemoMode ? ' · demonstração' : '');
   document.getElementById('shift-count-sub').textContent = `${shifts.length} turnos configurados${sourceNote}`;
   document.getElementById('shift-table-body').innerHTML = shifts.map(s=>{
     const label = shiftLabel(s);
@@ -8802,7 +8820,7 @@ async function renderFerias(){
   `;
 
   const filtered = statusFilter ? vacationRequests.filter(r=>r.status===statusFilter) : vacationRequests;
-  const sourceNote = currentInstitutionId ? ' · sistema ☁' : '';
+  const sourceNote = currentInstitutionId ? ' · sistema ☁' : (isDemoMode ? ' · demonstração' : '');
   document.getElementById('ferias-count-sub').textContent = `${vacationRequests.length} pedidos · ${filtered.length} apresentados${sourceNote}`;
 
   document.getElementById('ferias-table-body').innerHTML = filtered.length ? filtered.map(r=>{
@@ -8973,7 +8991,7 @@ async function renderFaltas(){
   const filtered = absenceRequests.filter(r =>
     (!statusFilter || r.status===statusFilter) && (!tipoFilter || r.type===tipoFilter)
   );
-  const sourceNote = currentInstitutionId ? ' · sistema ☁' : '';
+  const sourceNote = currentInstitutionId ? ' · sistema ☁' : (isDemoMode ? ' · demonstração' : '');
   document.getElementById('faltas-count-sub').textContent = `${absenceRequests.length} faltas registadas · ${filtered.length} apresentadas${sourceNote}`;
 
   document.getElementById('faltas-table-body').innerHTML = filtered.length ? filtered.map(r=>{
@@ -10215,6 +10233,163 @@ const submitBtn = document.getElementById('login-submit-btn');
 
 let currentEmployee = null;
 let currentInstitutionId = null; // UUID Supabase da instituição autenticada
+let isDemoMode = false;
+
+
+function picaDemoDate(offset=0){
+  const d=new Date(currentWeekStart);
+  d.setDate(d.getDate()+offset);
+  return dateStr(d);
+}
+
+function seedHospitalDemoData(){
+  isDemoMode=true;
+  currentInstitutionId=null;
+  currentWeekStart=getMonday(new Date());
+
+  teams=[
+    {id:'demo-team-urg',name:'Urgência',minStaff:3,worksSaturday:true,worksSunday:true,scheduled:4,present:4,color:'#B94A48'},
+    {id:'demo-team-enf',name:'Enfermagem',minStaff:3,worksSaturday:true,worksSunday:true,scheduled:4,present:3,color:'#145C54'},
+    {id:'demo-team-sg',name:'Serviços Gerais',minStaff:2,worksSaturday:true,worksSunday:true,scheduled:3,present:3,color:'#4C6FAE'}
+  ];
+
+  shifts=[
+    {id:'demo-m',name:'Manhã',start:'07:00',end:'15:00',color:'#E85C58',overnight:false,breakMinutes:30},
+    {id:'demo-t',name:'Tarde',start:'15:00',end:'23:00',color:'#2864D7',overnight:false,breakMinutes:30},
+    {id:'demo-n',name:'Noite',start:'23:00',end:'07:00',color:'#145C54',overnight:true,breakMinutes:30}
+  ];
+
+  const sm=shiftLabel(shifts[0]), st=shiftLabel(shifts[1]), sn=shiftLabel(shifts[2]);
+  employees=[
+    {id:101,name:'Marta Silva',team:'Urgência',schedule:sm,status:'ativo',vacation:18,weeklyHours:40,pin:'1201',mobileClockIn:false},
+    {id:102,name:'João Ferreira',team:'Urgência',schedule:st,status:'ativo',vacation:21,weeklyHours:40,pin:'1202',mobileClockIn:false},
+    {id:103,name:'Rita Costa',team:'Urgência',schedule:sn,status:'ativo',vacation:14,weeklyHours:40,pin:'1203',mobileClockIn:false},
+    {id:104,name:'Pedro Almeida',team:'Urgência',schedule:'Flexível',status:'ativo',vacation:20,weeklyHours:40,pin:'1204',mobileClockIn:true},
+
+    {id:201,name:'Ana Martins',team:'Enfermagem',schedule:sm,status:'ativo',vacation:16,weeklyHours:40,pin:'2201',mobileClockIn:false},
+    {id:202,name:'Carla Rodrigues',team:'Enfermagem',schedule:st,status:'ativo',vacation:19,weeklyHours:40,pin:'2202',mobileClockIn:false},
+    {id:203,name:'Miguel Sousa',team:'Enfermagem',schedule:sn,status:'ativo',vacation:22,weeklyHours:40,pin:'2203',mobileClockIn:false},
+    {id:204,name:'Inês Carvalho',team:'Enfermagem',schedule:'Flexível',status:'ativo',vacation:17,weeklyHours:35,pin:'2204',mobileClockIn:true},
+
+    {id:301,name:'Luís Pereira',team:'Serviços Gerais',schedule:sm,status:'ativo',vacation:20,weeklyHours:40,pin:'3201',mobileClockIn:false},
+    {id:302,name:'Sofia Ribeiro',team:'Serviços Gerais',schedule:st,status:'ativo',vacation:15,weeklyHours:40,pin:'3202',mobileClockIn:false},
+    {id:303,name:'Paulo Gomes',team:'Serviços Gerais',schedule:sm,status:'ativo',vacation:22,weeklyHours:40,pin:'3203',mobileClockIn:false},
+    {id:304,name:'Diana Lopes',team:'Serviços Gerais',schedule:'Flexível',status:'ativo',vacation:12,weeklyHours:30,pin:'3204',mobileClockIn:true}
+  ];
+  nextEmployeeId=401;
+
+  rosterEntries=[];
+  const shiftCycle=['demo-m','demo-t','demo-n'];
+  const byTeam={
+    'Urgência':employees.filter(e=>e.team==='Urgência'),
+    'Enfermagem':employees.filter(e=>e.team==='Enfermagem'),
+    'Serviços Gerais':employees.filter(e=>e.team==='Serviços Gerais')
+  };
+  for(let di=0;di<7;di++){
+    const ds=picaDemoDate(di);
+    Object.values(byTeam).forEach((group,gi)=>{
+      group.forEach((emp,ei)=>{
+        // Rotação: 5 dias de trabalho, com folgas desencontradas.
+        const off=((di+ei+gi)%6===0);
+        if(off){
+          rosterEntries.push({id:`demo-r-${emp.id}-${di}`,employeeId:emp.id,teamId:teams.find(t=>t.name===emp.team)?.id,date:ds,shiftId:null,isDayOff:true,notes:'Folga de rotação',status:'scheduled'});
+        }else{
+          rosterEntries.push({id:`demo-r-${emp.id}-${di}`,employeeId:emp.id,teamId:teams.find(t=>t.name===emp.team)?.id,date:ds,shiftId:shiftCycle[(ei+di+gi)%3],isDayOff:false,notes:di===2?'Escala demo':'' ,status:'scheduled'});
+        }
+      });
+    });
+  }
+
+  rosterApprovedVacations=[
+    {employee_id:204,start_date:picaDemoDate(4),end_date:picaDemoDate(5),status:'approved'}
+  ];
+  rosterApprovedAbsences=[
+    {employee_id:302,start_date:picaDemoDate(2),end_date:picaDemoDate(2),status:'approved',category:'doenca',reason:'Consulta médica'}
+  ];
+
+  vacationRequests=[
+    {id:'demo-v1',employeeId:101,start:picaDemoDate(10),end:picaDemoDate(12),status:'pendente',reason:'Férias'},
+    {id:'demo-v2',employeeId:204,start:picaDemoDate(4),end:picaDemoDate(5),status:'aprovado',reason:'Descanso'},
+    {id:'demo-v3',employeeId:303,start:picaDemoDate(-10),end:picaDemoDate(-8),status:'aprovado',reason:'Férias'}
+  ];
+  nextVacationId=4;
+
+  absenceRequests=[
+    {id:'demo-a1',employeeId:302,date:picaDemoDate(2),type:'doenca',reason:'Consulta médica',attachment:null,status:'aprovado'},
+    {id:'demo-a2',employeeId:103,date:picaDemoDate(1),type:'justificada',reason:'Assunto familiar',attachment:null,status:'pendente'},
+    {id:'demo-a3',employeeId:304,date:picaDemoDate(-4),type:'injustificada',reason:'Sem justificação apresentada',attachment:null,status:'aprovado'}
+  ];
+  nextAbsenceId=4;
+
+  punchRecords.splice(0,punchRecords.length,
+    {name:'Marta Silva',team:'Urgência',scheduled:'07:00',actual:'06:56',status:'pontual'},
+    {name:'João Ferreira',team:'Urgência',scheduled:'15:00',actual:'15:08',status:'atraso'},
+    {name:'Ana Martins',team:'Enfermagem',scheduled:'07:00',actual:'06:52',status:'pontual'},
+    {name:'Carla Rodrigues',team:'Enfermagem',scheduled:'15:00',actual:'14:58',status:'pontual'},
+    {name:'Luís Pereira',team:'Serviços Gerais',scheduled:'07:00',actual:'07:03',status:'pontual'},
+    {name:'Sofia Ribeiro',team:'Serviços Gerais',scheduled:'15:00',actual:'—',status:'falta'}
+  );
+
+  rosterFairnessHistory=[];
+  for(let w=1;w<=4;w++){
+    employees.forEach((emp,idx)=>{
+      const base=new Date(currentWeekStart);
+      base.setDate(base.getDate()-(w*7)+(idx%6));
+      rosterFairnessHistory.push({
+        employee_id:emp.id,
+        shift_type_id:(idx+w)%4===0?'demo-n':((idx+w)%2===0?'demo-m':'demo-t'),
+        work_date:dateStr(base),
+        is_day_off:false
+      });
+    });
+  }
+
+  userAccounts=[
+    {id:'du1',employeeId:101,email:'marta.silva@demo.hospital',role:'employee',active:true},
+    {id:'du2',employeeId:201,email:'ana.martins@demo.hospital',role:'employee',active:true},
+    {id:'du3',employeeId:301,email:'luis.pereira@demo.hospital',role:'employee',active:true}
+  ];
+
+  try{
+    populateTeamSelects();
+    populateShiftSelect();
+  }catch(_){}
+}
+
+async function enterHospitalDemo(){
+  seedHospitalDemoData();
+
+  document.getElementById('login-screen').hidden=true;
+  document.getElementById('dashboard-screen').hidden=true;
+  document.getElementById('employee-portal-screen').hidden=true;
+  document.getElementById('license-blocked-screen').hidden=true;
+  document.getElementById('admin-dashboard-screen').hidden=false;
+
+  const demoBanner=document.getElementById('pica-demo-banner');
+  if(demoBanner) demoBanner.hidden=false;
+  const inst=document.getElementById('admin-inst-name');
+  if(inst) inst.textContent='Hospital Santa Aurora';
+  const plan=document.getElementById('admin-inst-plan');
+  if(plan) plan.textContent='Plano Demo · 12 colaboradores';
+
+  try{
+    document.getElementById('colab-filter-team').value='';
+    document.getElementById('colab-filter-status').value='';
+    document.getElementById('escala-filter-team').value='';
+  }catch(_){}
+
+  await renderAdminDashboard();
+  try{ renderEquipas(); }catch(_){}
+  try{ renderColaboradores(); }catch(_){}
+  try{ renderTurnos(); }catch(_){}
+  try{ await renderEscalas(); }catch(_){}
+  try{ await renderPonto(); }catch(_){}
+  try{ await renderFerias(); }catch(_){}
+  try{ await renderFaltas(); }catch(_){}
+
+  showToast('Demo Hospital carregada — 3 equipas · 12 colaboradores.');
+  maybeStartTour?.();
+}
 
 async function routeAfterSupabaseLogin(profile, supaUser){
   if(profile.is_active === false){
@@ -10314,7 +10489,16 @@ credentialForm.addEventListener('submit', async (e)=>{
   const email = document.getElementById('email-input').value.trim().toLowerCase();
   const pass = document.getElementById('password-input').value;
 
-  if(!isValidEmail(email)){ showToast('Indique um email válido.', true); return; }
+  if(email==='demopicaaqui' && pass==='demo'){
+    submitBtn.disabled=true;
+    const originalLabel=submitBtn.textContent;
+    submitBtn.textContent='A carregar demo…';
+    try{ await enterHospitalDemo(); }
+    finally{ submitBtn.disabled=false; submitBtn.textContent=originalLabel; }
+    return;
+  }
+
+  if(!isValidEmail(email)){ showToast('Indique um email válido ou use o utilizador da demo.', true); return; }
   if(!pass){ showToast('Indique a palavra-passe.', true); return; }
   if(!supabaseClient){ showToast('Serviço de dados indisponível.', true); return; }
 
@@ -11215,6 +11399,23 @@ async function refreshAccessHistoryLicenseVisibility(){
   }
 }
 async function renderAccessHistory(){
+  if(isDemoMode){
+    const events=[
+      {person:'Marta Silva',device:'Entrada Urgência',when:'Hoje · 06:55',result:'Autorizado'},
+      {person:'Ana Martins',device:'Ala Enfermagem',when:'Hoje · 06:51',result:'Autorizado'},
+      {person:'Visitante não identificado',device:'Área Técnica',when:'Hoje · 07:13',result:'Recusado'},
+      {person:'Luís Pereira',device:'Serviços Gerais',when:'Hoje · 07:02',result:'Autorizado'}
+    ];
+    const k=document.getElementById('access-history-kpis');
+    if(k) k.innerHTML=`
+      <div class="kpi-card"><div class="label">Eventos</div><div class="value">4</div><div class="delta flat">demo</div></div>
+      <div class="kpi-card"><div class="label">Autorizados</div><div class="value">3</div><div class="delta up">entradas válidas</div></div>
+      <div class="kpi-card"><div class="label">Recusados</div><div class="value">1</div><div class="delta down">acesso negado</div></div>
+      <div class="kpi-card"><div class="label">Pessoas</div><div class="value">4</div><div class="delta flat">fictícias</div></div>`;
+    const body=document.getElementById('access-history-body');
+    if(body) body.innerHTML=events.map(e=>`<tr><td class="inst-name">${e.person}</td><td>${e.device}</td><td>${e.when}</td><td><span class="badge ${e.result==='Autorizado'?'active':'expired'}">${e.result}</span></td><td>Demo</td></tr>`).join('');
+    return;
+  }
   if(!currentInstitutionId) return;
   const licensed=await refreshAccessHistoryLicenseVisibility();
   if(!licensed){
@@ -12269,6 +12470,10 @@ async function saveHikvisionMappings(){
   const overlay=document.getElementById('roster-generator-overlay');
   const previewBtn=document.getElementById('roster-generator-preview-btn');
   const applyBtn=document.getElementById('roster-generator-apply-btn');
+  const proposalApplyBtn=document.getElementById('roster-proposal-apply');
+  const proposalBackBtn=document.getElementById('roster-proposal-back');
+  const proposalCloseBtn=document.getElementById('roster-proposal-close');
+  const proposalOverlay=document.getElementById('roster-proposal-overlay');
 
   if(openBtn && !openBtn.dataset.wired){
     openBtn.dataset.wired='1';
