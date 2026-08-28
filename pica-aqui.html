@@ -3665,6 +3665,24 @@ body:not(.access-addon-enabled) #hik-advanced-health-panel{
   </div>
 </div>
 
+
+<div class="overlay" id="pica-alert-overlay" style="z-index:9998;"></div>
+<div class="modal" id="pica-alert-modal" style="z-index:9999;max-width:440px;">
+  <div class="modal-head">
+    <div>
+      <h3 id="pica-alert-title">Aviso</h3>
+      <div class="sub" id="pica-alert-subtitle">Não foi possível concluir a ação.</div>
+    </div>
+    <button class="drawer-close" id="pica-alert-close">✕</button>
+  </div>
+  <div class="modal-body">
+    <div id="pica-alert-message" style="line-height:1.55;"></div>
+  </div>
+  <div class="modal-foot">
+    <button class="btn-primary" id="pica-alert-ok">Entendi</button>
+  </div>
+</div>
+
 <div class="overlay" id="team-drawer-overlay"></div>
 <div class="drawer" id="team-drawer">
   <div class="drawer-head">
@@ -6685,6 +6703,42 @@ document.getElementById('f-pin-generate').addEventListener('click', ()=>{
 document.getElementById('colab-filter-team').addEventListener('change', renderColaboradores);
 document.getElementById('colab-filter-status').addEventListener('change', renderColaboradores);
 
+
+function picaFriendlyError(err, fallback='Não foi possível concluir a ação.'){
+  const raw=String(err?.message||err||'').trim();
+  if(!raw) return fallback;
+  const low=raw.toLowerCase();
+  if(low.includes('foreign key') || low.includes('violates foreign key'))
+    return 'Este registo ainda está associado a outros dados e não pode ser removido enquanto essas ligações existirem.';
+  if(low.includes('permission') || low.includes('permiss') || low.includes('sem permiss'))
+    return 'A tua conta não tem permissões para realizar esta ação.';
+  if(low.includes('duplicate') || low.includes('unique'))
+    return 'Já existe um registo com estes dados.';
+  if(low.includes('network') || low.includes('fetch'))
+    return 'Não foi possível comunicar com o servidor. Verifica a ligação à internet e tenta novamente.';
+  return raw;
+}
+function picaShowAlert(message, options={}){
+  const modal=document.getElementById('pica-alert-modal');
+  const overlay=document.getElementById('pica-alert-overlay');
+  if(!modal || !overlay){
+    alert(message);
+    return;
+  }
+  document.getElementById('pica-alert-title').textContent=options.title||'Aviso';
+  document.getElementById('pica-alert-subtitle').textContent=options.subtitle||'Não foi possível concluir a ação.';
+  document.getElementById('pica-alert-message').innerHTML=`<div class="hint-chip" style="display:block;">${picaEsc(String(message||'Ocorreu um erro.'))}</div>`;
+  modal.classList.add('open');
+  overlay.classList.add('open');
+}
+function picaCloseAlert(){
+  document.getElementById('pica-alert-modal')?.classList.remove('open');
+  document.getElementById('pica-alert-overlay')?.classList.remove('open');
+}
+document.getElementById('pica-alert-close')?.addEventListener('click',picaCloseAlert);
+document.getElementById('pica-alert-ok')?.addEventListener('click',picaCloseAlert);
+document.getElementById('pica-alert-overlay')?.addEventListener('click',picaCloseAlert);
+
 /* ---------------- EQUIPAS ---------------- */
 function renderEquipas(){
   document.getElementById('team-count-sub').textContent = `${teams.length} equipas`;
@@ -6730,7 +6784,7 @@ async function saveTeam(){
   const minStaff=Math.max(0,Math.floor(Number(document.getElementById('tf-min-staff')?.value)||0));
   const worksSaturday=!!document.getElementById('tf-works-saturday')?.checked;
   const worksSunday=!!document.getElementById('tf-works-sunday')?.checked;
-  if(!name){showToast('O nome da equipa é obrigatório.',true);return;}
+  if(!name){picaShowAlert('Tens de indicar um nome para a equipa antes de guardar.',{title:'Falta o nome da equipa'});return;}
 
   const existing=editingTeamName ? teams.find(t=>t.name===editingTeamName) : null;
   const btn=document.getElementById('team-drawer-save-btn');
@@ -6777,7 +6831,7 @@ async function saveTeam(){
 
   }catch(err){
     console.error('Erro ao guardar equipa:',err);
-    showToast('Erro ao guardar equipa: '+(err.message||''),true);
+    picaShowAlert(picaFriendlyError(err,'Não foi possível guardar a equipa.'),{title:'Erro ao guardar equipa'});
   }finally{
     btn.disabled=false; btn.textContent=old;
   }
@@ -6787,7 +6841,7 @@ async function deleteTeam(name){
   if(!team) return;
 
   if(employees.some(e=>e.team===name)){
-    showToast('Não é possível eliminar: existem colaboradores nesta equipa.', true);
+    picaShowAlert('Esta equipa não pode ser eliminada porque ainda tem colaboradores associados. Remove ou transfere primeiro esses colaboradores para outra equipa.',{title:'Não é possível eliminar a equipa'});
     return;
   }
 
@@ -6822,7 +6876,7 @@ async function deleteTeam(name){
 
   }catch(err){
     console.error('Erro ao eliminar equipa:', err);
-    showToast('Erro ao eliminar equipa: ' + (err.message || ''), true);
+    picaShowAlert(picaFriendlyError(err,'Não foi possível eliminar a equipa.'),{title:'Erro ao eliminar equipa'});
   }
 }
 
@@ -6937,27 +6991,30 @@ async function saveShift(){
   if(!name || !start || !end){ showToast('Preencha nome, início e fim do turno.', true); return; }
 
   if(currentInstitutionId){
-    const payload = {
-      institution_id: currentInstitutionId, name, start_time: start, end_time: end,
-      overnight: end <= start, color,
-    };
+    const btn=document.getElementById('shift-drawer-save-btn');
+    const oldText=btn?.textContent||'Guardar';
+    if(btn){btn.disabled=true;btn.textContent='A guardar…';}
     try {
-      if(editingShiftId){
-        const { error } = await supabaseClient.from('shift_types').update(payload).eq('id', editingShiftId);
-        if(error) throw error;
-        showToast('Turno atualizado no sistema.');
-      } else {
-        const { error } = await supabaseClient.from('shift_types').insert(payload);
-        if(error) throw error;
-        showToast('Turno criado no sistema.');
-      }
+      const {data,error}=await supabaseClient.rpc('save_shift_type',{
+        p_institution_id: currentInstitutionId,
+        p_shift_id: editingShiftId || null,
+        p_name: name,
+        p_start_time: start,
+        p_end_time: end,
+        p_color: color
+      });
+      if(error) throw error;
+      if(!data?.id) throw new Error('O turno não foi devolvido pelo servidor.');
       await loadShiftsFromSupabase(currentInstitutionId);
       closeShiftDrawer();
       renderTurnos();
       populateShiftSelect();
+      showToast(editingShiftId?'Turno atualizado no sistema.':'Turno criado no sistema.');
     } catch(err){
-      console.error(err);
-      showToast('Erro ao gravar turno no sistema: ' + (err.message||'tente novamente.'), true);
+      console.error('Erro ao guardar turno:',err);
+      showToast('Erro ao gravar turno: ' + (err.message||'tente novamente.'), true);
+    } finally {
+      if(btn){btn.disabled=false;btn.textContent=oldText;}
     }
     return;
   }
@@ -6981,33 +7038,40 @@ async function saveShift(){
 }
 
 function deleteShift(id){
-  const s = shifts.find(x=>x.id==id);
+  const s = shifts.find(x=>String(x.id)===String(id));
+  if(!s){ showToast('Turno não encontrado. Atualiza a página e tenta novamente.', true); return; }
   const label = shiftLabel(s);
-  if(employees.some(e=>e.schedule===label)){ showToast('Não é possível eliminar: existem colaboradores neste turno.', true); return; }
+  const linkedEmployees = employees.filter(e=>e.schedule===label).length;
 
   dangerConfirm({
     title: 'Eliminar turno',
-    message: `Vai eliminar o turno "${s.name}". Escalas antigas que o usaram deixam de o mostrar corretamente.`,
+    message: linkedEmployees
+      ? `Vai desativar o turno "${s.name}". ${linkedEmployees} colaborador(es) têm este horário associado; a associação deixa de ser usada, mas o histórico de escalas é preservado.`
+      : `Vai desativar o turno "${s.name}". O histórico de escalas anteriores é preservado.`,
     confirmWord: s.name,
     confirmLabel: 'Eliminar turno',
     onConfirm: async ()=>{
       if(currentInstitutionId){
         try {
-          const { error } = await supabaseClient.from('shift_types').update({deleted_at: new Date().toISOString()}).eq('id', id);
+          const {error}=await supabaseClient.rpc('delete_shift_type',{p_shift_id:id});
           if(error) throw error;
+          employees.forEach(e=>{ if(e.schedule===label) e.schedule='—'; });
           await loadShiftsFromSupabase(currentInstitutionId);
           renderTurnos();
           populateShiftSelect();
-          showToast('Turno eliminado no sistema.');
+          renderColaboradores();
+          showToast('Turno eliminado. O histórico foi mantido.');
         } catch(err){
-          console.error(err);
-          showToast('Erro ao eliminar no sistema: ' + (err.message||'tente novamente.'), true);
+          console.error('Erro ao eliminar turno:',err);
+          showToast('Erro ao eliminar turno: ' + (err.message||'tente novamente.'), true);
         }
         return;
       }
-      shifts = shifts.filter(x=>x.id!=id);
+      employees.forEach(e=>{ if(e.schedule===label) e.schedule='—'; });
+      shifts = shifts.filter(x=>String(x.id)!==String(id));
       renderTurnos();
       populateShiftSelect();
+      renderColaboradores();
       showToast('Turno eliminado.');
     }
   });
@@ -7916,7 +7980,7 @@ async function saveRosterModal(){
   const {employeeId, date} = rosterModalContext;
 
   if(employeeOnApprovedVacation(employeeId, date)){
-    showToast('Este colaborador tem férias aprovadas neste dia.', true);
+    picaShowAlert('Este colaborador tem férias aprovadas neste dia, por isso não pode ser escalado.',{title:'Colaborador indisponível'});
     return;
   }
 
