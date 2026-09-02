@@ -1,4 +1,4 @@
-const APP_VERSION = 'pica-aqui-2026-09-02-01';
+const APP_VERSION = 'pica-aqui-2026-09-02-02';
 const STATIC_CACHE = `${APP_VERSION}-static`;
 const RUNTIME_CACHE = `${APP_VERSION}-runtime`;
 
@@ -7,7 +7,8 @@ const CORE_ASSETS = [
   './manifest.json',
   './logo-pica-aqui.png',
   './apple-touch-icon.png',
-  './colab-turn-type.js'
+  './colab-turn-type.js',
+  './roster-live-metrics.js'
 ];
 
 self.addEventListener('install', event => {
@@ -47,8 +48,12 @@ async function injectPicaEnhancements(response) {
   if (!contentType.includes('text/html')) return response;
 
   const html = await response.text();
-  const scriptTag = '<script src="./colab-turn-type.js?v=20260902-01"></script>';
-  if (html.includes('colab-turn-type.js')) {
+  const scripts = [
+    '<script src="./colab-turn-type.js?v=20260902-02"></script>',
+    '<script src="./roster-live-metrics.js?v=20260902-02"></script>'
+  ];
+  const missing = scripts.filter(tag => !html.includes(tag.match(/src="([^"]+)/)?.[1]?.split('?')[0] || ''));
+  if (!missing.length) {
     return new Response(html, {
       status: response.status,
       statusText: response.statusText,
@@ -57,9 +62,10 @@ async function injectPicaEnhancements(response) {
   }
 
   const bodyEnd = html.lastIndexOf('</body>');
+  const block = missing.join('\n');
   const enhanced = bodyEnd >= 0
-    ? `${html.slice(0, bodyEnd)}\n${scriptTag}\n${html.slice(bodyEnd)}`
-    : `${html}\n${scriptTag}`;
+    ? `${html.slice(0, bodyEnd)}\n${block}\n${html.slice(bodyEnd)}`
+    : `${html}\n${block}`;
 
   const headers = new Headers(response.headers);
   headers.delete('content-length');
