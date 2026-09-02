@@ -1,4 +1,4 @@
-const APP_VERSION = 'pica-aqui-2026-08-28-03';
+const APP_VERSION = 'pica-aqui-2026-09-02-01';
 const STATIC_CACHE = `${APP_VERSION}-static`;
 const RUNTIME_CACHE = `${APP_VERSION}-runtime`;
 
@@ -6,7 +6,8 @@ const CORE_ASSETS = [
   './',
   './manifest.json',
   './logo-pica-aqui.png',
-  './apple-touch-icon.png'
+  './apple-touch-icon.png',
+  './colab-turn-type.js'
 ];
 
 self.addEventListener('install', event => {
@@ -40,6 +41,37 @@ self.addEventListener('message', event => {
   }
 });
 
+async function injectPicaEnhancements(response) {
+  if (!response || !response.ok) return response;
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.includes('text/html')) return response;
+
+  const html = await response.text();
+  const scriptTag = '<script src="./colab-turn-type.js?v=20260902-01"></script>';
+  if (html.includes('colab-turn-type.js')) {
+    return new Response(html, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers
+    });
+  }
+
+  const bodyEnd = html.lastIndexOf('</body>');
+  const enhanced = bodyEnd >= 0
+    ? `${html.slice(0, bodyEnd)}\n${scriptTag}\n${html.slice(bodyEnd)}`
+    : `${html}\n${scriptTag}`;
+
+  const headers = new Headers(response.headers);
+  headers.delete('content-length');
+  headers.set('cache-control', 'no-store');
+
+  return new Response(enhanced, {
+    status: response.status,
+    statusText: response.statusText,
+    headers
+  });
+}
+
 self.addEventListener('fetch', event => {
   const req = event.request;
   if (req.method !== 'GET') return;
@@ -57,14 +89,16 @@ self.addEventListener('fetch', event => {
   }
 
   // HTML/navegação: network-first para evitar clientes presos em versões antigas.
+  // Injeta também pequenas melhorias isoladas sem obrigar a reescrever o HTML monolítico inteiro.
   if (req.mode === 'navigate' || req.destination === 'document') {
     event.respondWith(
       (async () => {
         try {
           const fresh = await fetch(req, { cache: 'no-store' });
+          const enhanced = await injectPicaEnhancements(fresh);
           const cache = await caches.open(RUNTIME_CACHE);
-          cache.put(req, fresh.clone()).catch(() => {});
-          return fresh;
+          cache.put(req, enhanced.clone()).catch(() => {});
+          return enhanced;
         } catch (_) {
           return (await caches.match(req)) || (await caches.match('./')) || Response.error();
         }
