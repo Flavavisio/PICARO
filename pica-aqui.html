@@ -13133,7 +13133,7 @@ function zkRecordTime(rec){
 }
 async function fetchZktecoLocalAttendance(host,port){
   const controller=new AbortController();
-  const timer=setTimeout(()=>controller.abort(),70000);
+  const timer=setTimeout(()=>controller.abort(),100000);
   try{
     const r=await fetch('http://127.0.0.1:43700/zkteco/attendance',{
       method:'POST',
@@ -13148,7 +13148,7 @@ async function fetchZktecoLocalAttendance(host,port){
     });
     const data=await r.json().catch(()=>({}));
     if(!r.ok||!data.ok){
-      const attempts=Array.isArray(data.attempts)?data.attempts.map(a=>`${String(a.protocol||'').toUpperCase()}: ${a.ok?'OK':(a.message||a.code||'falhou')}`).join(' · '):'';
+      const attempts=Array.isArray(data.attempts)?data.attempts.map(a=>`${String(a.protocol||'').toUpperCase()}${a.strategy?'/'+a.strategy:''}: ${a.ok?'OK':(a.message||a.code||'falhou')}`).join(' · '):'';
       throw new Error((data.message||data.error||'Não foi possível ler as picagens do terminal.')+(attempts?` · ${attempts}`:''));
     }
     return data;
