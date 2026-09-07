@@ -1735,7 +1735,6 @@ button.is-loading::after{
 
 <style id="access-addon-visibility-gate">
 body:not(.access-addon-enabled) #nav-access-history,
-body:not(.access-addon-enabled) #settings-access-tab-btn,
 body:not(.access-addon-enabled) #settings-terminal-acessos,
 body:not(.access-addon-enabled) #hik-advanced-health-panel{
   display:none !important;
@@ -3045,7 +3044,7 @@ body:not(.access-addon-enabled) #hik-advanced-health-panel{
         <div class="toolbar" style="margin-bottom:16px;">
           <div class="filter-group settings-subnav" id="admin-settings-subnav" style="display:flex;gap:8px;flex-wrap:wrap;">
             <button type="button" class="btn-outline active" data-settings-tab="presencas">Presenças</button>
-            <button type="button" class="btn-outline" data-settings-tab="acessos" id="settings-access-tab-btn" hidden>Terminal de Acessos</button>
+            <button type="button" class="btn-outline" data-settings-tab="integracoes" id="settings-access-tab-btn">Integrações e Equipamentos</button>
             <button type="button" class="btn-outline" data-settings-tab="licencas">Licença e Plano</button>
           </div>
         </div>
@@ -3092,21 +3091,26 @@ body:not(.access-addon-enabled) #hik-advanced-health-panel{
 
 
 
-        <section id="settings-terminal-ponto" style="margin-top:24px;">
+        <section id="settings-terminal-ponto" style="margin-top:24px;" hidden>
           <div class="panel" style="margin-bottom:16px;">
             <div class="panel-body" style="padding-top:18px;">
 
         <div class="panel-head">
           <div>
-            <h2 style="font-family:var(--font-display);font-size:22px;">Terminal de Ponto / Presenças</h2>
-            <div class="sub">Configuração do equipamento HIKVISION usado para registos de ponto</div>
+            <h2 style="font-family:var(--font-display);font-size:22px;">Integrações e Equipamentos</h2>
+            <div class="sub">Selecione a marca e configure as funções suportadas por cada equipamento.</div>
+            <div class="filter-group" id="pica-equipment-brand-tabs" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">
+              <button type="button" class="btn-outline active" data-equipment-brand="hikvision">Hikvision <span class="sub" style="margin-left:5px;">Acessos + Presenças</span></button>
+              <button type="button" class="btn-outline" data-equipment-brand="zkteco">ZKTeco <span class="sub" style="margin-left:5px;">Presenças</span></button>
+            </div>
           </div>
         </div>
         <!-- ================= HIKVISION ================= -->
-        <div class="panel" style="margin-top:16px;">
+        <div id="pica-brand-hikvision">
+        <div class="panel" id="pica-brand-hikvision-presencas" style="margin-top:16px;">
           <div class="panel-head">
             <div>
-              <h3>Terminal de Ponto HIKVISION</h3>
+              <h3>Hikvision · Presenças</h3>
               <div class="sub">Equipamento HIKVISION usado para picagens de entrada/saída</div>
             </div>
             <span id="hik-status-badge" class="status-tag" style="white-space:nowrap;">Não configurado</span>
@@ -3229,14 +3233,15 @@ body:not(.access-addon-enabled) #hik-advanced-health-panel{
               <button type="button" class="btn-add" id="ad-hik-map-save-btn">Guardar mapeamentos</button>
             </div>
           </div>
-
+        </div>
 
         <!-- ================= ZKTECO ================= -->
-        <div class="panel" style="margin-top:16px;">
+        <div id="pica-brand-zkteco" hidden>
+        <div class="panel" id="pica-brand-zkteco-presencas" style="margin-top:16px;" hidden>
           <div class="panel-head">
             <div>
-              <h3>Terminal de Ponto ZKTeco</h3>
-              <div class="sub">SpeedFace · ligação direta por DNS/IP e porta, semelhante à integração Hikvision</div>
+              <h3>ZKTeco · Presenças</h3>
+              <div class="sub">SpeedFace · ligação direta por DNS/IP e porta</div>
             </div>
             <span id="zk-status-badge" class="status-tag" style="white-space:nowrap;">Não configurado</span>
           </div>
@@ -3260,7 +3265,7 @@ body:not(.access-addon-enabled) #hik-advanced-health-panel{
               <div>
                 <div class="field">
                   <label>IP / Host / DNS</label>
-                  <input type="text" id="ad-zk-host" placeholder="Ex.: cliente.ddns.net" autocomplete="off">
+                  <input type="text" id="ad-zk-host" placeholder="Ex.: empresa.ddns.net" autocomplete="off">
                   <div class="hint" style="font-size:11.5px;color:var(--ink-faint);margin-top:6px;">DNS público ou IP através do qual o Pica-Aqui/bridge chega ao terminal.</div>
                 </div>
                 <div class="grid-2" style="gap:10px;">
@@ -3269,8 +3274,8 @@ body:not(.access-addon-enabled) #hik-advanced-health-panel{
                     <input type="number" id="ad-zk-port" value="4370" min="1" max="65535" inputmode="numeric">
                   </div>
                   <div class="field">
-                    <label>Modo</label>
-                    <select id="ad-zk-connection-mode"><option value="direct" selected>Direto / Bridge</option><option value="adms_push">ADMS / PUSH</option></select>
+                    <label>Ligação</label>
+                    <input type="text" value="DNS / IP · Bridge" disabled aria-label="Ligação ZKTeco por DNS ou IP">
                   </div>
                 </div>
                 <div class="field">
@@ -3285,13 +3290,21 @@ body:not(.access-addon-enabled) #hik-advanced-health-panel{
                   </label>
                 </div>
                 <div style="padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);">
+                  <strong style="font-size:12px;">Ligação configurada</strong>
+                  <div id="ad-zk-endpoint-preview" style="font-family:var(--font-mono);font-size:12px;margin-top:6px;word-break:break-all;">—:4370</div>
+                  <div class="hint" style="font-size:11.5px;color:var(--ink-faint);margin-top:6px;">A comunicação real é feita pelo Pica-Aqui Device Bridge, não pelo browser.</div>
+                </div>
+                <div style="padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);margin-top:10px;">
                   <strong style="font-size:12px;">Última comunicação</strong>
                   <div id="ad-zk-last-seen" style="font-size:13px;margin-top:5px;">Nunca</div>
+                  <div id="ad-zk-diagnostic" class="hint" style="font-size:11.5px;color:var(--ink-faint);margin-top:5px;">Aguardando primeiro teste de ligação.</div>
                 </div>
               </div>
             </div>
             <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:14px;flex-wrap:wrap;">
               <button type="button" class="btn-outline" id="ad-zk-refresh-btn">Atualizar estado</button>
+              <button type="button" class="btn-outline" id="ad-zk-test-btn">Testar ligação</button>
+              <button type="button" class="btn-outline" id="ad-zk-sync-btn">Sincronizar picagens</button>
               <button type="button" class="btn-add" id="ad-zk-save-btn">Guardar equipamento</button>
             </div>
           </div>
@@ -3333,6 +3346,7 @@ body:not(.access-addon-enabled) #hik-advanced-health-panel{
           </div>
         </div>
         </div>
+        </div>
 
 
 
@@ -3342,7 +3356,7 @@ body:not(.access-addon-enabled) #hik-advanced-health-panel{
         </section>
 
 
-        <section id="settings-terminal-acessos" style="margin-top:24px;">
+        <section id="settings-terminal-acessos" data-equipment-brand-section="hikvision" style="margin-top:24px;" hidden>
           <div class="panel" style="margin-bottom:16px;">
             <div class="panel-body" style="padding-top:18px;">
 
@@ -12925,6 +12939,63 @@ function renderZktecoStatus(){
     last.textContent=dev?.last_seen_at?new Date(dev.last_seen_at).toLocaleString('pt-PT'):'Nunca';
   }
 }
+function updateZktecoEndpointPreview(){
+  const host=document.getElementById('ad-zk-host')?.value.trim()||'—';
+  const port=Number(document.getElementById('ad-zk-port')?.value||4370);
+  const preview=document.getElementById('ad-zk-endpoint-preview');
+  if(preview) preview.textContent=`${host}:${port}`;
+}
+function setZktecoDiagnostic(text,isError=false){
+  const el=document.getElementById('ad-zk-diagnostic');
+  if(!el) return;
+  el.textContent=text||'';
+  el.style.color=isError?'var(--danger, #b42318)':'var(--ink-faint)';
+}
+async function testZktecoConnection(){
+  if(!supabaseClient||!currentInstitutionId){ showToast('É necessário entrar como Admin de uma instituição.',true); return; }
+  const dev=currentZktecoDevice();
+  if(!dev){ showToast('Guarda primeiro o terminal ZKTeco.',true); return; }
+  const host=document.getElementById('ad-zk-host')?.value.trim();
+  const port=Number(document.getElementById('ad-zk-port')?.value||4370);
+  if(!host||!Number.isInteger(port)||port<1||port>65535){ showToast('Preenche DNS/IP e uma porta válida.',true); return; }
+  const btn=document.getElementById('ad-zk-test-btn');
+  const label=btn?.textContent||'Testar ligação';
+  if(btn){btn.disabled=true;btn.textContent='A testar…';}
+  setZktecoDiagnostic(`A testar ${host}:${port}…`);
+  try{
+    const {data,error}=await supabaseClient.functions.invoke('test-zkteco-connection',{body:{institution_id:currentInstitutionId,device_id:dev.id,host,port,comm_key:document.getElementById('ad-zk-comm-key')?.value||null}});
+    if(error) throw error;
+    if(!data?.ok) throw new Error(data?.error||'O terminal não respondeu.');
+    setZktecoDiagnostic(data?.model?`Ligação OK · ${data.model}${data.serial_number?' · SN '+data.serial_number:''}`:'Ligação estabelecida com sucesso.');
+    showToast('Ligação ZKTeco estabelecida com sucesso.');
+    await loadZktecoConfig();
+  }catch(err){
+    console.error(err);
+    setZktecoDiagnostic('Falha no teste: '+(err?.message||'Bridge indisponível.'),true);
+    showToast('Teste ZKTeco falhou: '+(err?.message||'publica primeiro o Device Bridge.'),true);
+  }finally{if(btn){btn.disabled=false;btn.textContent=label;}}
+}
+async function syncZktecoAttendance(){
+  const dev=currentZktecoDevice();
+  if(!dev){ showToast('Guarda primeiro o terminal ZKTeco.',true); return; }
+  const btn=document.getElementById('ad-zk-sync-btn');
+  const label=btn?.textContent||'Sincronizar picagens';
+  if(btn){btn.disabled=true;btn.textContent='A sincronizar…';}
+  try{
+    const {data,error}=await supabaseClient.functions.invoke('sync-zkteco-attendance',{body:{institution_id:currentInstitutionId,device_id:dev.id}});
+    if(error) throw error;
+    if(!data?.ok) throw new Error(data?.error||'Não foi possível sincronizar.');
+    const count=Number(data?.imported||data?.events||0);
+    showToast(count?`${count} picagem(ns) ZKTeco sincronizada(s).`:'Sincronização ZKTeco concluída.');
+    setZktecoDiagnostic(`Última sincronização concluída${count?` · ${count} evento(s)`:''}.`);
+    await loadZktecoConfig();
+  }catch(err){
+    console.error(err);
+    setZktecoDiagnostic('Erro de sincronização: '+(err?.message||''),true);
+    showToast('Erro ao sincronizar ZKTeco: '+(err?.message||'Bridge indisponível.'),true);
+  }finally{if(btn){btn.disabled=false;btn.textContent=label;}}
+}
+
 function fillZktecoDeviceForm(){
   const d=currentZktecoDevice();
   const set=(id,v)=>{const el=document.getElementById(id); if(el) el.value=v??'';};
@@ -12933,10 +13004,10 @@ function fillZktecoDeviceForm(){
   set('ad-zk-serial',d?.serial_number||'');
   set('ad-zk-host',d?.ip_address||d?.device_info?.host||'');
   set('ad-zk-port',d?.device_info?.port||4370);
-  set('ad-zk-connection-mode',d?.protocol||'direct');
   set('ad-zk-comm-key',d?.device_info?.comm_key||'');
   const enabled=document.getElementById('ad-zk-enabled');
   if(enabled) enabled.checked=d?d.active!==false:true;
+  updateZktecoEndpointPreview();
   renderZktecoStatus();
 }
 function renderZktecoMappings(){
@@ -13003,11 +13074,11 @@ async function saveZktecoDevice(){
   const serial=document.getElementById('ad-zk-serial')?.value.trim();
   const host=document.getElementById('ad-zk-host')?.value.trim();
   const port=Number(document.getElementById('ad-zk-port')?.value||4370);
-  const protocol=document.getElementById('ad-zk-connection-mode')?.value||'direct';
+  const protocol='direct';
   const commKey=document.getElementById('ad-zk-comm-key')?.value||'';
   const active=!!document.getElementById('ad-zk-enabled')?.checked;
   if(!serial){ showToast('Indica o número de série (SN) do terminal ZKTeco.',true); return; }
-  if(protocol==='direct'&&!host){ showToast('Indica o IP / Host / DNS do terminal ZKTeco.',true); return; }
+  if(!host){ showToast('Indica o IP / Host / DNS do terminal ZKTeco.',true); return; }
   if(!Number.isInteger(port)||port<1||port>65535){ showToast('Indica uma porta válida entre 1 e 65535.',true); return; }
   const existing=currentZktecoDevice();
   const payload={institution_id:currentInstitutionId,name,model,serial_number:serial,active,protocol,device_type:'attendance',ip_address:host||null,device_info:{...(existing?.device_info||{}),host:host||null,port,comm_key:commKey||null,connection_mode:protocol}};
@@ -13440,33 +13511,44 @@ async function saveHikvisionMappings(){
 
 let adminLicenseData = null;
 
-function setAdminSettingsTab(tab){
-  if(tab==='acessos' && !hikAccessAddon?.enabled){
-    tab='presencas';
-  }
-  const presencas = tab==='presencas';
-  const acessos = tab==='acessos' && !!hikAccessAddon?.enabled;
+let picaEquipmentBrand='hikvision';
 
-  const general=document.getElementById('settings-presencas-general');
+function setEquipmentBrand(brand){
+  picaEquipmentBrand = brand==='zkteco' ? 'zkteco' : 'hikvision';
+  const hikGroup=document.getElementById('pica-brand-hikvision');
+  const zkGroup=document.getElementById('pica-brand-zkteco');
+  const hikAccess=document.getElementById('settings-terminal-acessos');
+  if(hikGroup) hikGroup.hidden=picaEquipmentBrand!=='hikvision';
+  if(zkGroup) zkGroup.hidden=picaEquipmentBrand!=='zkteco';
+  if(hikAccess) hikAccess.hidden=picaEquipmentBrand!=='hikvision' || !hikAccessAddon?.enabled;
+  document.querySelectorAll('[data-equipment-brand]').forEach(btn=>btn.classList.toggle('active',btn.dataset.equipmentBrand===picaEquipmentBrand));
+  if(picaEquipmentBrand==='hikvision'){ loadHikvisionConfig(); if(hikAccessAddon?.enabled) renderTerminalAcessos(); }
+  else loadZktecoConfig();
+}
+
+function setAdminSettingsTab(tab){
+  const presencas = tab==='presencas';
+  const integracoes = tab==='integracoes';
   const point=document.getElementById('settings-terminal-ponto');
-  const save=document.getElementById('settings-presencas-save');
   const access=document.getElementById('settings-terminal-acessos');
 
-  if(general) general.hidden=!presencas;
-  if(point) point.hidden=!presencas;
-  if(save) save.hidden=!presencas;
-  if(access) access.hidden=!acessos;
+  /* As regras gerais continuam no separador Presenças; os equipamentos vivem apenas em Integrações. */
+  if(point) point.hidden=!integracoes;
+  if(access) access.hidden=true;
 
   document.querySelectorAll('[data-settings-tab]').forEach(btn=>{
     btn.classList.toggle('active',btn.dataset.settingsTab===tab);
   });
 
-  if(acessos) renderTerminalAcessos();
-  if(presencas){ loadHikvisionConfig(); loadZktecoConfig(); }
+  if(integracoes) setEquipmentBrand(picaEquipmentBrand);
 }
 
 document.querySelectorAll('[data-settings-tab]').forEach(btn=>{
   btn.addEventListener('click',()=>setAdminSettingsTab(btn.dataset.settingsTab));
+});
+
+document.querySelectorAll('[data-equipment-brand]').forEach(btn=>{
+  btn.addEventListener('click',()=>setEquipmentBrand(btn.dataset.equipmentBrand));
 });
 
 function fmtLicenseMoney(cents,currency='EUR'){
@@ -13742,6 +13824,11 @@ document.getElementById('ad-hik-password-toggle').addEventListener('click', ()=>
 document.getElementById('ad-hik-map-save-btn').addEventListener('click', saveHikvisionMappings);
 document.getElementById('ad-hik-map-refresh-btn').addEventListener('click', loadHikvisionConfig);
 document.getElementById('ad-zk-save-btn')?.addEventListener('click', saveZktecoDevice);
+document.getElementById('ad-zk-test-btn')?.addEventListener('click', testZktecoConnection);
+document.getElementById('ad-zk-sync-btn')?.addEventListener('click', syncZktecoAttendance);
+document.getElementById('ad-zk-host')?.addEventListener('input', updateZktecoEndpointPreview);
+document.getElementById('ad-zk-port')?.addEventListener('input', updateZktecoEndpointPreview);
+document.getElementById('ad-zk-connection-mode')?.addEventListener('change', updateZktecoEndpointPreview);
 document.getElementById('ad-zk-refresh-btn')?.addEventListener('click', loadZktecoConfig);
 document.getElementById('ad-zk-map-refresh-btn')?.addEventListener('click', loadZktecoConfig);
 document.getElementById('ad-zk-map-save-btn')?.addEventListener('click', saveZktecoMappings);
