@@ -3277,7 +3277,7 @@ body:not(.access-addon-enabled) #hik-advanced-health-panel{
                   </div>
                   <div class="field">
                     <label>Ligação</label>
-                    <input type="text" value="DNS / IP · Bridge" disabled aria-label="Ligação ZKTeco por DNS ou IP">
+                    <input type="text" value="DNS / IP · TCP direto" disabled aria-label="Ligação ZKTeco por DNS ou IP">
                   </div>
                 </div>
                 <div class="field">
@@ -12957,45 +12957,52 @@ async function testZktecoConnection(){
   if(!supabaseClient||!currentInstitutionId){ showToast('É necessário entrar como Admin de uma instituição.',true); return; }
   const dev=currentZktecoDevice();
   if(!dev){ showToast('Guarda primeiro o terminal ZKTeco.',true); return; }
+
   const host=document.getElementById('ad-zk-host')?.value.trim();
   const port=Number(document.getElementById('ad-zk-port')?.value||4370);
   if(!host||!Number.isInteger(port)||port<1||port>65535){ showToast('Preenche DNS/IP e uma porta válida.',true); return; }
+
+  const savedHost=String(dev?.connection_host||dev?.ip_address||dev?.device_info?.host||'').trim();
+  const savedPort=Number(dev?.connection_port||dev?.device_info?.port||4370);
+  if(host!==savedHost || port!==savedPort){
+    showToast('Guarda primeiro as alterações do DNS/IP ou porta.',true);
+    setZktecoDiagnostic('Existem alterações por guardar no DNS/IP ou porta.',true);
+    return;
+  }
+
   const btn=document.getElementById('ad-zk-test-btn');
   const label=btn?.textContent||'Testar ligação';
-  if(btn){btn.disabled=true;btn.textContent='A testar…';}
-  setZktecoDiagnostic(`A testar ${host}:${port}…`);
+  if(btn){btn.disabled=true;btn.textContent='A testar TCP…';}
+  setZktecoDiagnostic(`A testar ligação TCP direta a ${host}:${port}…`);
+
   try{
-    const {data,error}=await supabaseClient.functions.invoke('test-zkteco-connection',{body:{institution_id:currentInstitutionId,device_id:dev.id,host,port,comm_key:document.getElementById('ad-zk-comm-key')?.value||null}});
+    const {data,error}=await supabaseClient.functions.invoke('test-zkteco-tcp',{
+      body:{institution_id:currentInstitutionId,device_id:dev.id}
+    });
     if(error) throw error;
-    if(!data?.ok) throw new Error(data?.error||'O terminal não respondeu.');
-    setZktecoDiagnostic(data?.model?`Ligação OK · ${data.model}${data.serial_number?' · SN '+data.serial_number:''}`:'Ligação estabelecida com sucesso.');
-    showToast('Ligação ZKTeco estabelecida com sucesso.');
+    if(!data?.ok || !data?.tcp_reachable){
+      throw new Error(data?.message||data?.error||'O terminal não respondeu.');
+    }
+
+    const latency=Number.isFinite(Number(data?.latency_ms))?` · ${Number(data.latency_ms)} ms`:'';
+    setZktecoDiagnostic(`TCP disponível · ${host}:${port}${latency}`);
+    showToast('Ligação TCP ao ZKTeco estabelecida com sucesso.');
     await loadZktecoConfig();
   }catch(err){
-    console.error(err);
-    setZktecoDiagnostic('Falha no teste: '+(err?.message||'Bridge indisponível.'),true);
-    showToast('Teste ZKTeco falhou: '+(err?.message||'publica primeiro o Device Bridge.'),true);
-  }finally{if(btn){btn.disabled=false;btn.textContent=label;}}
+    console.error('Teste TCP ZKTeco:',err);
+    const message=err?.message||'Não foi possível chegar ao terminal.';
+    setZktecoDiagnostic('Falha no teste TCP: '+message,true);
+    showToast('Teste TCP ZKTeco falhou: '+message,true);
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent=label;}
+  }
 }
+
 async function syncZktecoAttendance(){
   const dev=currentZktecoDevice();
   if(!dev){ showToast('Guarda primeiro o terminal ZKTeco.',true); return; }
-  const btn=document.getElementById('ad-zk-sync-btn');
-  const label=btn?.textContent||'Sincronizar picagens';
-  if(btn){btn.disabled=true;btn.textContent='A sincronizar…';}
-  try{
-    const {data,error}=await supabaseClient.functions.invoke('sync-zkteco-attendance',{body:{institution_id:currentInstitutionId,device_id:dev.id}});
-    if(error) throw error;
-    if(!data?.ok) throw new Error(data?.error||'Não foi possível sincronizar.');
-    const count=Number(data?.imported||data?.events||0);
-    showToast(count?`${count} picagem(ns) ZKTeco sincronizada(s).`:'Sincronização ZKTeco concluída.');
-    setZktecoDiagnostic(`Última sincronização concluída${count?` · ${count} evento(s)`:''}.`);
-    await loadZktecoConfig();
-  }catch(err){
-    console.error(err);
-    setZktecoDiagnostic('Erro de sincronização: '+(err?.message||''),true);
-    showToast('Erro ao sincronizar ZKTeco: '+(err?.message||'Bridge indisponível.'),true);
-  }finally{if(btn){btn.disabled=false;btn.textContent=label;}}
+  setZktecoDiagnostic('Primeiro confirma a ligação TCP direta. A sincronização das picagens será ativada na fase seguinte.');
+  showToast('Primeiro confirma a ligação TCP do terminal.');
 }
 
 function fillZktecoDeviceForm(){
