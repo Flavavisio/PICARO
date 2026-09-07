@@ -3243,7 +3243,7 @@ body:not(.access-addon-enabled) #hik-advanced-health-panel{
           <div class="panel-head">
             <div>
               <h3>ZKTeco · Presenças</h3>
-              <div class="sub">SpeedFace · ligação direta por DNS/IP e porta</div>
+              <div class="sub">SpeedFace · ligação local ou remota · sincronização de presenças</div>
             </div>
             <span id="zk-status-badge" class="status-tag" style="white-space:nowrap;">Não configurado</span>
           </div>
@@ -13005,6 +13005,10 @@ async function testZktecoConnection(){
       setZktecoDiagnostic(`A testar rede local ${localHost}:${localPort}…`);
       try{
         const d=await testZktecoLocal(dev,localHost,localPort);
+        const now=new Date().toISOString();
+        await supabaseClient.from('zkteco_devices').update({last_seen_at:now}).eq('id',dev.id);
+        dev.last_seen_at=now;
+        renderZktecoStatus();
         setZktecoDiagnostic(`Ligação LOCAL disponível · ${localHost}:${localPort}${d.latency_ms!=null?' · '+d.latency_ms+' ms':''}`);
         showToast('ZKTeco ligado pela rede local.'); return;
       }catch(e){ localError=e; if(mode==='local') throw new Error('Local Connector indisponível ou terminal inacessível: '+e.message); }
@@ -13022,11 +13026,97 @@ async function testZktecoConnection(){
     showToast('Teste ZKTeco falhou: '+(err?.message||''),true);
   }finally{if(btn){btn.disabled=false;btn.textContent=label;}}
 }
+async function zkSha256Hex(text){
+  const bytes=new TextEncoder().encode(String(text||''));
+  const digest=await crypto.subtle.digest('SHA-256',bytes);
+  return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function zkRecordUserId(rec){
+  return String(rec?.deviceUserId ?? rec?.userId ?? rec?.user_id ?? rec?.device_user_id ?? rec?.userSn ?? '').trim();
+}
+function zkRecordTime(rec){
+  const raw=rec?.recordTime ?? rec?.attTime ?? rec?.timestamp ?? rec?.time ?? rec?.date;
+  if(!raw) return null;
+  const d=new Date(raw);
+  return Number.isNaN(d.getTime())?null:d.toISOString();
+}
+async function fetchZktecoLocalAttendance(host,port){
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),30000);
+  try{
+    const r=await fetch('http://127.0.0.1:43700/zkteco/attendance',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        host,
+        port,
+        commKey:document.getElementById('ad-zk-comm-key')?.value||'',
+        limit:2000
+      }),
+      signal:controller.signal
+    });
+    const data=await r.json().catch(()=>({}));
+    if(!r.ok||!data.ok) throw new Error(data.message||data.error||'Não foi possível ler as picagens do terminal.');
+    return data;
+  }finally{ clearTimeout(timer); }
+}
 async function syncZktecoAttendance(){
   const dev=currentZktecoDevice();
   if(!dev){ showToast('Guarda primeiro o terminal ZKTeco.',true); return; }
-  setZktecoDiagnostic('Primeiro confirma a ligação TCP direta. A sincronização das picagens será ativada na fase seguinte.');
-  showToast('Primeiro confirma a ligação TCP do terminal.');
+  const mode=document.getElementById('ad-zk-connection-mode')?.value||'auto';
+  const localHost=document.getElementById('ad-zk-local-host')?.value.trim();
+  const localPort=Number(document.getElementById('ad-zk-local-port')?.value||4370);
+  const btn=document.getElementById('ad-zk-sync-btn');
+  const oldLabel=btn?.textContent||'Sincronizar picagens';
+  if(btn){btn.disabled=true;btn.textContent='A sincronizar…';}
+  try{
+    if(mode==='remote') throw new Error('A sincronização de picagens está disponível agora pelo Local Connector. Seleciona Rede local ou Automática.');
+    if(!localHost) throw new Error('Indica o IP local do terminal ZKTeco.');
+    setZktecoDiagnostic(`A ler picagens de ${localHost}:${localPort}…`);
+    const result=await fetchZktecoLocalAttendance(localHost,localPort);
+    const records=Array.isArray(result.records)?result.records:[];
+    let inserted=0, mapped=0, skipped=0;
+    const rows=[];
+    for(const rec of records){
+      const deviceUserId=zkRecordUserId(rec);
+      const eventTime=zkRecordTime(rec);
+      if(!deviceUserId||!eventTime){ skipped++; continue; }
+      const map=zktecoMappings.find(m=>String(m.device_user_id)===deviceUserId && m.active!==false);
+      if(map?.employee_id) mapped++;
+      const eventHash=await zkSha256Hex(`${dev.id}|${deviceUserId}|${eventTime}`);
+      rows.push({
+        institution_id:currentInstitutionId,
+        device_id:dev.id,
+        employee_id:map?.employee_id||null,
+        device_user_id:deviceUserId,
+        event_time:eventTime,
+        event_type:'attendance',
+        verify_method:rec?.verifyMode!=null?String(rec.verifyMode):null,
+        attendance_state:rec?.inOutStatus!=null?String(rec.inOutStatus):(rec?.punch!=null?String(rec.punch):null),
+        event_hash:eventHash,
+        raw_data:rec?.raw||rec,
+        processed:false
+      });
+    }
+    if(rows.length){
+      for(let i=0;i<rows.length;i+=200){
+        const chunk=rows.slice(i,i+200);
+        const {data,error}=await supabaseClient.from('zkteco_events').upsert(chunk,{onConflict:'event_hash',ignoreDuplicates:true}).select('id');
+        if(error) throw error;
+        inserted+=(data||[]).length;
+      }
+    }
+    const now=new Date().toISOString();
+    await supabaseClient.from('zkteco_devices').update({last_seen_at:now,last_event_at:records[0]?zkRecordTime(records[0]):dev.last_event_at,last_sync_at:now}).eq('id',dev.id);
+    setZktecoDiagnostic(`Sincronização concluída · ${records.length} lidas · ${inserted} novas · ${mapped} associadas${skipped?' · '+skipped+' ignoradas':''}`);
+    showToast(`ZKTeco: ${records.length} picagens lidas, ${inserted} novas.`);
+    await loadZktecoConfig();
+  }catch(err){
+    console.error('Sincronização ZKTeco:',err);
+    const msg=err?.name==='AbortError'?'Tempo limite ao ler picagens do terminal.':(err?.message||'Falha na sincronização.');
+    setZktecoDiagnostic('Falha na sincronização: '+msg,true);
+    showToast('Erro a sincronizar ZKTeco: '+msg,true);
+  }finally{if(btn){btn.disabled=false;btn.textContent=oldLabel;}}
 }
 
 function fillZktecoDeviceForm(){
