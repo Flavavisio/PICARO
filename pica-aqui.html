@@ -3243,7 +3243,7 @@ body:not(.access-addon-enabled) #hik-advanced-health-panel{
           <div class="panel-head">
             <div>
               <h3>ZKTeco · Presenças</h3>
-              <div class="sub">SpeedFace · ligação local ou remota · sincronização de presenças</div>
+              <div class="sub">SpeedFace · ADMS Server + rede local · sincronização de presenças</div>
             </div>
             <span id="zk-status-badge" class="status-tag" style="white-space:nowrap;">Não configurado</span>
           </div>
@@ -3268,29 +3268,50 @@ body:not(.access-addon-enabled) #hik-advanced-health-panel{
                 <div class="field">
                   <label>Modo de ligação</label>
                   <select id="ad-zk-connection-mode">
-                    <option value="auto">Automática · Local primeiro, remoto se necessário</option>
+                    <option value="hybrid">Híbrida · ADMS Server + IP local</option>
+                    <option value="adms">ADMS Server · picagens automáticas</option>
                     <option value="local">Rede local · Pica-Aqui Local Connector</option>
-                    <option value="remote">Remota · DNS/IP público via Supabase</option>
+                    <option value="remote">TCP remoto · DNS/IP público (avançado)</option>
                   </select>
-                  <div class="hint" style="font-size:11.5px;color:var(--ink-faint);margin-top:6px;">Em Automática, o Pica-Aqui tenta primeiro o terminal na LAN e usa a ligação remota como alternativa.</div>
+                  <div class="hint" id="ad-zk-mode-hint" style="font-size:11.5px;color:var(--ink-faint);margin-top:6px;">Recomendado: ADMS recebe as picagens automaticamente e o IP local fica disponível para diagnóstico/configuração pela LAN.</div>
                 </div>
-                <div class="grid-2" style="gap:10px;">
-                  <div class="field">
-                    <label>IP local (LAN)</label>
-                    <input type="text" id="ad-zk-local-host" placeholder="Ex.: 192.168.x.x" autocomplete="off">
-                  </div>
-                  <div class="field">
-                    <label>Porta local</label>
-                    <input type="number" id="ad-zk-local-port" value="4370" min="1" max="65535" inputmode="numeric">
+                <div id="ad-zk-local-fields">
+                  <div class="grid-2" style="gap:10px;">
+                    <div class="field">
+                      <label>IP local (LAN)</label>
+                      <input type="text" id="ad-zk-local-host" placeholder="Ex.: 192.168.x.x" autocomplete="off">
+                    </div>
+                    <div class="field">
+                      <label>Porta local</label>
+                      <input type="number" id="ad-zk-local-port" value="4370" min="1" max="65535" inputmode="numeric">
+                    </div>
                   </div>
                 </div>
-                <div class="grid-2" style="gap:10px;">
+                <div id="ad-zk-adms-fields" style="padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);margin-bottom:12px;">
+                  <strong style="font-size:12px;display:block;margin-bottom:10px;">ADMS Server</strong>
+                  <div class="grid-2" style="gap:10px;">
+                    <div class="field" style="margin-bottom:0;">
+                      <label>DNS / IP do servidor ADMS</label>
+                      <input type="text" id="ad-zk-adms-host" placeholder="Ex.: adms.empresa.pt" autocomplete="off">
+                    </div>
+                    <div class="field" style="margin-bottom:0;">
+                      <label>Porta ADMS</label>
+                      <input type="number" id="ad-zk-adms-port" value="443" min="1" max="65535" inputmode="numeric">
+                    </div>
+                  </div>
+                  <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12px;">
+                    <input type="checkbox" id="ad-zk-adms-https" checked style="width:auto;">
+                    Usar HTTPS
+                  </label>
+                  <div class="hint" style="font-size:11.5px;color:var(--ink-faint);margin-top:6px;">Este é o endereço configurado no menu ADMS/Cloud Server do terminal. O terminal inicia a comunicação e envia as picagens ao servidor.</div>
+                </div>
+                <div id="ad-zk-remote-fields" class="grid-2" style="gap:10px;display:none;">
                   <div class="field">
-                    <label>DNS / IP remoto</label>
+                    <label>DNS / IP remoto TCP</label>
                     <input type="text" id="ad-zk-host" placeholder="Ex.: empresa.ddns.net" autocomplete="off">
                   </div>
                   <div class="field">
-                    <label>Porta remota</label>
+                    <label>Porta TCP remota</label>
                     <input type="number" id="ad-zk-port" value="4370" min="1" max="65535" inputmode="numeric">
                   </div>
                 </div>
@@ -3307,8 +3328,8 @@ body:not(.access-addon-enabled) #hik-advanced-health-panel{
                 </div>
                 <div style="padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);">
                   <strong style="font-size:12px;">Ligação configurada</strong>
-                  <div id="ad-zk-endpoint-preview" style="font-family:var(--font-mono);font-size:12px;margin-top:6px;word-break:break-all;">Automática · Local —:4370 · Remoto —:4370</div>
-                  <div class="hint" style="font-size:11.5px;color:var(--ink-faint);margin-top:6px;">Local: através do Pica-Aqui Local Connector neste PC. Remoto: através do backend Supabase.</div>
+                  <div id="ad-zk-endpoint-preview" style="font-family:var(--font-mono);font-size:12px;margin-top:6px;word-break:break-all;">Híbrida · ADMS — · Local —:4370</div>
+                  <div class="hint" style="font-size:11.5px;color:var(--ink-faint);margin-top:6px;">ADMS: picagens automáticas do terminal para o servidor. Local: diagnóstico e operações pela LAN através do Pica-Aqui Local Connector.</div>
                 </div>
                 <div style="padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);margin-top:10px;">
                   <strong style="font-size:12px;">Última comunicação</strong>
@@ -12956,14 +12977,33 @@ function renderZktecoStatus(){
   }
 }
 function updateZktecoEndpointPreview(){
-  const mode=document.getElementById('ad-zk-connection-mode')?.value||'auto';
+  const mode=document.getElementById('ad-zk-connection-mode')?.value||'hybrid';
   const localHost=document.getElementById('ad-zk-local-host')?.value.trim()||'—';
   const localPort=Number(document.getElementById('ad-zk-local-port')?.value||4370);
   const host=document.getElementById('ad-zk-host')?.value.trim()||'—';
   const port=Number(document.getElementById('ad-zk-port')?.value||4370);
+  const admsHost=document.getElementById('ad-zk-adms-host')?.value.trim()||'—';
+  const admsPort=Number(document.getElementById('ad-zk-adms-port')?.value||443);
+  const admsHttps=!!document.getElementById('ad-zk-adms-https')?.checked;
   const preview=document.getElementById('ad-zk-endpoint-preview');
-  const label=mode==='local'?'Local':mode==='remote'?'Remota':'Automática';
-  if(preview) preview.textContent=`${label} · Local ${localHost}:${localPort} · Remoto ${host}:${port}`;
+  const localFields=document.getElementById('ad-zk-local-fields');
+  const admsFields=document.getElementById('ad-zk-adms-fields');
+  const remoteFields=document.getElementById('ad-zk-remote-fields');
+  const hint=document.getElementById('ad-zk-mode-hint');
+  if(localFields) localFields.style.display=(mode==='hybrid'||mode==='local')?'':'none';
+  if(admsFields) admsFields.style.display=(mode==='hybrid'||mode==='adms')?'':'none';
+  if(remoteFields) remoteFields.style.display=mode==='remote'?'grid':'none';
+  if(hint){
+    hint.textContent=mode==='hybrid'?'Recomendado: ADMS recebe as picagens automaticamente e o IP local fica disponível para diagnóstico/configuração pela LAN.'
+      :mode==='adms'?'O terminal envia automaticamente as picagens para o servidor ADMS configurado.'
+      :mode==='local'?'A comunicação é feita na rede local através do Pica-Aqui Local Connector.'
+      :'Ligação TCP direta por DNS/IP público. Use apenas quando a rede permitir acesso externo seguro.';
+  }
+  if(!preview) return;
+  if(mode==='hybrid') preview.textContent=`Híbrida · ADMS ${admsHttps?'https':'http'}://${admsHost}:${admsPort} · Local ${localHost}:${localPort}`;
+  else if(mode==='adms') preview.textContent=`ADMS · ${admsHttps?'https':'http'}://${admsHost}:${admsPort}`;
+  else if(mode==='local') preview.textContent=`Local · ${localHost}:${localPort}`;
+  else preview.textContent=`TCP remoto · ${host}:${port}`;
 }
 function setZktecoDiagnostic(text,isError=false){
   const el=document.getElementById('ad-zk-diagnostic');
@@ -12987,11 +13027,31 @@ async function testZktecoRemote(dev){
   if(!data?.ok||!data?.tcp_reachable) throw new Error(data?.message||data?.error||'O terminal não respondeu remotamente.');
   return data;
 }
+async function testZktecoAdms(){
+  const host=document.getElementById('ad-zk-adms-host')?.value.trim();
+  const port=Number(document.getElementById('ad-zk-adms-port')?.value||443);
+  const https=!!document.getElementById('ad-zk-adms-https')?.checked;
+  if(!host) throw new Error('Indica o DNS/IP do servidor ADMS.');
+  const scheme=https?'https':'http';
+  const defaultPort=(https&&port===443)||(!https&&port===80);
+  const url=`${scheme}://${host}${defaultPort?'':':'+port}/health`;
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),7000);
+  try{
+    const r=await fetch(url,{method:'GET',cache:'no-store',signal:controller.signal});
+    const data=await r.json().catch(()=>({}));
+    if(!r.ok||!data?.ok) throw new Error(data?.message||`Servidor ADMS respondeu HTTP ${r.status}.`);
+    return {...data,url};
+  }catch(err){
+    if(!https && location.protocol==='https:') throw new Error('O ADMS está em HTTP. O navegador bloqueia o teste por mixed content; o terminal pode continuar a comunicar por HTTP.');
+    throw err;
+  }finally{ clearTimeout(timer); }
+}
 async function testZktecoConnection(){
   if(!supabaseClient||!currentInstitutionId){ showToast('É necessário entrar como Admin de uma instituição.',true); return; }
   const dev=currentZktecoDevice();
   if(!dev){ showToast('Guarda primeiro o terminal ZKTeco.',true); return; }
-  const mode=document.getElementById('ad-zk-connection-mode')?.value||'auto';
+  const mode=document.getElementById('ad-zk-connection-mode')?.value||'hybrid';
   const localHost=document.getElementById('ad-zk-local-host')?.value.trim();
   const localPort=Number(document.getElementById('ad-zk-local-port')?.value||4370);
   const remoteHost=document.getElementById('ad-zk-host')?.value.trim();
@@ -12999,30 +13059,61 @@ async function testZktecoConnection(){
   const btn=document.getElementById('ad-zk-test-btn'), label=btn?.textContent||'Testar ligação';
   if(btn){btn.disabled=true;btn.textContent='A testar…';}
   try{
-    let localError=null;
-    if(mode!=='remote'){
-      if(!localHost) throw new Error('Indica o IP local do terminal.');
-      setZktecoDiagnostic(`A testar rede local ${localHost}:${localPort}…`);
-      try{
-        const d=await testZktecoLocal(dev,localHost,localPort);
+    if(mode==='adms'){
+      setZktecoDiagnostic('A testar servidor ADMS…');
+      const adms=await testZktecoAdms();
+      setZktecoDiagnostic(`Servidor ADMS disponível · ${adms.service||'Pica-Aqui ADMS'} ${adms.version?'v'+adms.version:''} · a aguardar comunicação do terminal.`);
+      showToast('Servidor ADMS disponível.');
+      return;
+    }
+    if(mode==='hybrid'){
+      const results={local:null,adms:null,localError:null,admsError:null};
+      if(localHost){
+        try{ results.local=await testZktecoLocal(dev,localHost,localPort); }
+        catch(e){ results.localError=e; }
+      }else results.localError=new Error('IP local não indicado.');
+      try{ results.adms=await testZktecoAdms(); }
+      catch(e){ results.admsError=e; }
+
+      if(results.local){
         const now=new Date().toISOString();
         await supabaseClient.from('zkteco_devices').update({last_seen_at:now}).eq('id',dev.id);
-        dev.last_seen_at=now;
-        renderZktecoStatus();
-        setZktecoDiagnostic(`Ligação LOCAL disponível · ${localHost}:${localPort}${d.latency_ms!=null?' · '+d.latency_ms+' ms':''}`);
-        showToast('ZKTeco ligado pela rede local.'); return;
-      }catch(e){ localError=e; if(mode==='local') throw new Error('Local Connector indisponível ou terminal inacessível: '+e.message); }
+        dev.last_seen_at=now; renderZktecoStatus();
+      }
+      if(results.local && results.adms){
+        setZktecoDiagnostic(`Híbrida OK · Local ${localHost}:${localPort}${results.local.latency_ms!=null?' · '+results.local.latency_ms+' ms':''} · ADMS disponível`);
+        showToast('ZKTeco local + servidor ADMS disponíveis.'); return;
+      }
+      if(results.adms && !results.local){
+        setZktecoDiagnostic(`ADMS disponível · Local indisponível: ${results.localError?.message||'sem resposta'}`);
+        showToast('ADMS disponível; ligação local indisponível.'); return;
+      }
+      if(results.local && !results.adms){
+        setZktecoDiagnostic(`Local disponível · ADMS não confirmado: ${results.admsError?.message||'sem resposta'}`);
+        showToast('Ligação local disponível; ADMS não confirmado.'); return;
+      }
+      throw new Error(`Local: ${results.localError?.message||'falhou'} · ADMS: ${results.admsError?.message||'falhou'}`);
     }
-    if(mode!=='local'){
+    if(mode==='local'){
+      if(!localHost) throw new Error('Indica o IP local do terminal.');
+      setZktecoDiagnostic(`A testar rede local ${localHost}:${localPort}…`);
+      const d=await testZktecoLocal(dev,localHost,localPort);
+      const now=new Date().toISOString();
+      await supabaseClient.from('zkteco_devices').update({last_seen_at:now}).eq('id',dev.id);
+      dev.last_seen_at=now; renderZktecoStatus();
+      setZktecoDiagnostic(`Ligação LOCAL disponível · ${localHost}:${localPort}${d.latency_ms!=null?' · '+d.latency_ms+' ms':''}`);
+      showToast('ZKTeco ligado pela rede local.'); return;
+    }
+    if(mode==='remote'){
       if(!remoteHost) throw new Error('Indica o DNS/IP remoto do terminal.');
-      setZktecoDiagnostic(mode==='auto'?'Local indisponível. A testar ligação remota…':`A testar ligação remota ${remoteHost}:${remotePort}…`);
+      setZktecoDiagnostic(`A testar ligação remota ${remoteHost}:${remotePort}…`);
       const d=await testZktecoRemote(dev);
       setZktecoDiagnostic(`Ligação REMOTA disponível · ${remoteHost}:${remotePort}${d.latency_ms!=null?' · '+d.latency_ms+' ms':''}`);
-      showToast(mode==='auto'?'Rede local indisponível; ligado remotamente.':'ZKTeco ligado remotamente.');
+      showToast('ZKTeco ligado remotamente.');
     }
   }catch(err){
     console.error('Teste ZKTeco:',err);
-    setZktecoDiagnostic('Falha na ligação: '+(err?.message||'Não foi possível chegar ao terminal.'),true);
+    setZktecoDiagnostic('Falha na ligação: '+(err?.message||'Não foi possível chegar ao terminal/servidor ADMS.'),true);
     showToast('Teste ZKTeco falhou: '+(err?.message||''),true);
   }finally{if(btn){btn.disabled=false;btn.textContent=label;}}
 }
@@ -13042,7 +13133,7 @@ function zkRecordTime(rec){
 }
 async function fetchZktecoLocalAttendance(host,port){
   const controller=new AbortController();
-  const timer=setTimeout(()=>controller.abort(),30000);
+  const timer=setTimeout(()=>controller.abort(),70000);
   try{
     const r=await fetch('http://127.0.0.1:43700/zkteco/attendance',{
       method:'POST',
@@ -13056,21 +13147,39 @@ async function fetchZktecoLocalAttendance(host,port){
       signal:controller.signal
     });
     const data=await r.json().catch(()=>({}));
-    if(!r.ok||!data.ok) throw new Error(data.message||data.error||'Não foi possível ler as picagens do terminal.');
+    if(!r.ok||!data.ok){
+      const attempts=Array.isArray(data.attempts)?data.attempts.map(a=>`${String(a.protocol||'').toUpperCase()}: ${a.ok?'OK':(a.message||a.code||'falhou')}`).join(' · '):'';
+      throw new Error((data.message||data.error||'Não foi possível ler as picagens do terminal.')+(attempts?` · ${attempts}`:''));
+    }
     return data;
   }finally{ clearTimeout(timer); }
 }
 async function syncZktecoAttendance(){
   const dev=currentZktecoDevice();
   if(!dev){ showToast('Guarda primeiro o terminal ZKTeco.',true); return; }
-  const mode=document.getElementById('ad-zk-connection-mode')?.value||'auto';
+  const mode=document.getElementById('ad-zk-connection-mode')?.value||'hybrid';
   const localHost=document.getElementById('ad-zk-local-host')?.value.trim();
   const localPort=Number(document.getElementById('ad-zk-local-port')?.value||4370);
   const btn=document.getElementById('ad-zk-sync-btn');
   const oldLabel=btn?.textContent||'Sincronizar picagens';
   if(btn){btn.disabled=true;btn.textContent='A sincronizar…';}
   try{
-    if(mode==='remote') throw new Error('A sincronização de picagens está disponível agora pelo Local Connector. Seleciona Rede local ou Automática.');
+    if(mode==='adms'){
+      setZktecoDiagnostic('ADMS ativo · a atualizar picagens já recebidas pelo servidor…');
+      await loadZktecoConfig();
+      const count=zktecoEvents.length;
+      setZktecoDiagnostic(`ADMS · ${count} evento${count===1?'':'s'} carregado${count===1?'':'s'} · as novas picagens entram automaticamente quando o terminal as envia.`);
+      showToast(`ZKTeco ADMS: ${count} picagens recentes carregadas.`);
+      return;
+    }
+    if(mode==='hybrid'&&!localHost){
+      setZktecoDiagnostic('Modo híbrido sem IP local · a carregar apenas eventos ADMS já recebidos…');
+      await loadZktecoConfig();
+      const count=zktecoEvents.length;
+      showToast(`ZKTeco ADMS: ${count} picagens recentes carregadas.`);
+      return;
+    }
+    if(mode==='remote') throw new Error('A leitura histórica TCP remota não está ativa neste modo.');
     if(!localHost) throw new Error('Indica o IP local do terminal ZKTeco.');
     setZktecoDiagnostic(`A ler picagens de ${localHost}:${localPort}…`);
     const result=await fetchZktecoLocalAttendance(localHost,localPort);
@@ -13108,8 +13217,9 @@ async function syncZktecoAttendance(){
     }
     const now=new Date().toISOString();
     await supabaseClient.from('zkteco_devices').update({last_seen_at:now,last_event_at:records[0]?zkRecordTime(records[0]):dev.last_event_at,last_sync_at:now}).eq('id',dev.id);
-    setZktecoDiagnostic(`Sincronização concluída · ${records.length} lidas · ${inserted} novas · ${mapped} associadas${skipped?' · '+skipped+' ignoradas':''}`);
-    showToast(`ZKTeco: ${records.length} picagens lidas, ${inserted} novas.`);
+    const proto=String(result.protocol||'').toUpperCase();
+    setZktecoDiagnostic(`Sincronização concluída${proto?' por '+proto:''} · ${records.length} lidas · ${inserted} novas · ${mapped} associadas${skipped?' · '+skipped+' ignoradas':''}`);
+    showToast(`ZKTeco${proto?' '+proto:''}: ${records.length} picagens lidas, ${inserted} novas.`);
     await loadZktecoConfig();
   }catch(err){
     console.error('Sincronização ZKTeco:',err);
@@ -13129,7 +13239,11 @@ function fillZktecoDeviceForm(){
   set('ad-zk-port',d?.connection_port||d?.device_info?.port||4370);
   set('ad-zk-local-host',d?.device_info?.local_host||'');
   set('ad-zk-local-port',d?.device_info?.local_port||4370);
-  set('ad-zk-connection-mode',d?.device_info?.connection_mode||'auto');
+  set('ad-zk-connection-mode',d?.device_info?.connection_mode||((d?.device_info?.adms_host)?'hybrid':'local'));
+  set('ad-zk-adms-host',d?.device_info?.adms_host||'');
+  set('ad-zk-adms-port',d?.device_info?.adms_port||443);
+  const admsHttps=document.getElementById('ad-zk-adms-https');
+  if(admsHttps) admsHttps.checked=d?.device_info?.adms_https!==false;
   set('ad-zk-comm-key',d?.device_info?.comm_key||'');
   const enabled=document.getElementById('ad-zk-enabled');
   if(enabled) enabled.checked=d?d.active!==false:true;
@@ -13200,19 +13314,24 @@ async function saveZktecoDevice(){
   const serial=document.getElementById('ad-zk-serial')?.value.trim();
   const host=document.getElementById('ad-zk-host')?.value.trim();
   const port=Number(document.getElementById('ad-zk-port')?.value||4370);
-  const connectionMode=document.getElementById('ad-zk-connection-mode')?.value||'auto';
+  const connectionMode=document.getElementById('ad-zk-connection-mode')?.value||'hybrid';
   const localHost=document.getElementById('ad-zk-local-host')?.value.trim()||'';
   const localPort=Number(document.getElementById('ad-zk-local-port')?.value||4370);
-  const protocol='direct';
+  const admsHost=document.getElementById('ad-zk-adms-host')?.value.trim()||'';
+  const admsPort=Number(document.getElementById('ad-zk-adms-port')?.value||443);
+  const admsHttps=!!document.getElementById('ad-zk-adms-https')?.checked;
+  const protocol=connectionMode==='hybrid'?'adms+direct':connectionMode==='adms'?'adms':'direct';
   const commKey=document.getElementById('ad-zk-comm-key')?.value||'';
   const active=!!document.getElementById('ad-zk-enabled')?.checked;
   if(!serial){ showToast('Indica o número de série (SN) do terminal ZKTeco.',true); return; }
-  if(connectionMode==='local'&&!localHost){ showToast('Indica o IP local do terminal ZKTeco.',true); return; }
+  if((connectionMode==='local'||connectionMode==='hybrid')&&!localHost){ showToast('Indica o IP local do terminal ZKTeco.',true); return; }
+  if((connectionMode==='adms'||connectionMode==='hybrid')&&!admsHost){ showToast('Indica o DNS/IP do servidor ADMS.',true); return; }
   if(connectionMode==='remote'&&!host){ showToast('Indica o DNS/IP remoto do terminal ZKTeco.',true); return; }
-  if(connectionMode==='auto'&&!localHost&&!host){ showToast('Indica pelo menos o IP local ou o DNS/IP remoto.',true); return; }
-  if(!Number.isInteger(port)||port<1||port>65535){ showToast('Indica uma porta válida entre 1 e 65535.',true); return; }
+  if(!Number.isInteger(localPort)||localPort<1||localPort>65535){ showToast('Indica uma porta local válida.',true); return; }
+  if(!Number.isInteger(admsPort)||admsPort<1||admsPort>65535){ showToast('Indica uma porta ADMS válida.',true); return; }
+  if(!Number.isInteger(port)||port<1||port>65535){ showToast('Indica uma porta TCP remota válida.',true); return; }
   const existing=currentZktecoDevice();
-  const payload={institution_id:currentInstitutionId,name,model,serial_number:serial,active,protocol,device_type:'attendance',ip_address:host||null,device_info:{...(existing?.device_info||{}),host:host||null,port,local_host:localHost||null,local_port:localPort,comm_key:commKey||null,connection_mode:connectionMode}};
+  const payload={institution_id:currentInstitutionId,name,model,serial_number:serial,active,protocol,device_type:'attendance',ip_address:host||null,device_info:{...(existing?.device_info||{}),host:host||null,port,local_host:localHost||null,local_port:localPort,adms_host:admsHost||null,adms_port:admsPort,adms_https:admsHttps,comm_key:commKey||null,connection_mode:connectionMode}};
   try{
     let res;
     if(existing) res=await supabaseClient.from('zkteco_devices').update(payload).eq('id',existing.id).select('*').single();
@@ -13961,6 +14080,9 @@ document.getElementById('ad-zk-host')?.addEventListener('input', updateZktecoEnd
 document.getElementById('ad-zk-local-host')?.addEventListener('input', updateZktecoEndpointPreview);
 document.getElementById('ad-zk-local-port')?.addEventListener('input', updateZktecoEndpointPreview);
 document.getElementById('ad-zk-port')?.addEventListener('input', updateZktecoEndpointPreview);
+document.getElementById('ad-zk-adms-host')?.addEventListener('input', updateZktecoEndpointPreview);
+document.getElementById('ad-zk-adms-port')?.addEventListener('input', updateZktecoEndpointPreview);
+document.getElementById('ad-zk-adms-https')?.addEventListener('change', updateZktecoEndpointPreview);
 document.getElementById('ad-zk-connection-mode')?.addEventListener('change', updateZktecoEndpointPreview);
 document.getElementById('ad-zk-refresh-btn')?.addEventListener('click', loadZktecoConfig);
 document.getElementById('ad-zk-map-refresh-btn')?.addEventListener('click', loadZktecoConfig);
