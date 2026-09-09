@@ -13133,7 +13133,7 @@ function zkRecordTime(rec){
 }
 async function fetchZktecoLocalAttendance(host,port){
   const controller=new AbortController();
-  const timer=setTimeout(()=>controller.abort(),100000);
+  const timer=setTimeout(()=>controller.abort(),360000);
   try{
     const r=await fetch('http://127.0.0.1:43700/zkteco/attendance',{
       method:'POST',
